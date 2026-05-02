@@ -1,7 +1,9 @@
 # Electra_AI_Center  - connect with us on Discord : https://discord.gg/rYdcWz3Ch6
 # A Project Developed by MakuluLinux.com
 
-# Plugin System Guide for the Intergated AI system on AI-OS
+# Plugin System Guide for Intergated AI system on AI-OS
+
+**Html Guide :** https://makululinux.us/ai-terminal-guide.html
 
 **Electra AI Terminal** is the AI assistant built into MakuluLinux. The core application is distributed as a compiled binary (`ai_terminal.bin`) to protect proprietary backend credentials. The **plugin system** is the open extension layer that allows the community to contribute new features, connect third-party APIs, and extend Electra's capabilities — all without access to the source code.
 
