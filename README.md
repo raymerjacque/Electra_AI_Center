@@ -1,7 +1,7 @@
 # Electra_AI_Center  - connect with us on Discord : https://discord.gg/rYdcWz3Ch6
 # A Project Developed by MakuluLinux.com
 
-# Plugin System Guide for Intergated AI system on AI-OS
+# Plugin System Guide for the AI system on AI-OS
 
 **Html Guide :** https://makululinux.us/ai-terminal-guide.html
 
