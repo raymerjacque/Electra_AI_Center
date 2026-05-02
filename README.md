@@ -1,4 +1,4 @@
-# Electra_AI_Center
+# Electra_AI_Center  - connect with us on Discord : https://discord.gg/rYdcWz3Ch6
 
 # Electra AI — Plugin System Guide
 
