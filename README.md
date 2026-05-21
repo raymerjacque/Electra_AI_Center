@@ -1237,18 +1237,6 @@ Requires: pip3 install somepackage   (if applicable)
 Triggers : phrase one | phrase two
 Commands : /mycommand
 """
-```
-
-### Guidelines for accepted plugins
-
-- Must work without modifying `ai_terminal.py` or any core file
-- Must read credentials from config file — zero hardcoded keys
-- Must handle all exceptions inside `run()` — return an error string, never raise
-- Must not use a `PLUGIN_ROUTE_TOKEN` from the reserved list
-- Must include a usage example in the docstring
-- Prefer standard library + `requests` over heavy third-party dependencies
-- HOOK plugins must set `PLUGIN_TRIGGERS = []`
-- AGENT plugins must have specific, non-conflicting `PLUGIN_TRIGGERS`
 
 ---
 
