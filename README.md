@@ -7,51 +7,63 @@
 
 ## Install
 
-One command installs everything — dependencies, binaries, autostart, and launches the floating bar:
+### 🖥️ Desktop / Laptop (with GUI)
+
+For Ubuntu/Debian desktops, laptops, and MakuluLinux. Installs both the terminal and the floating bar widget with full voice, GUI, and audio support:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install.sh | bash
+```
+
+### 🖧 Headless / Server (no GUI)
+
+For VPS, cloud servers, WSL, or any SSH-only machine with no desktop environment. Installs the terminal backend only — no GTK, no audio, no display required:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install-headless.sh | bash
 ```
 
 That's it. Electra AI Center will be running on your system within minutes.
 
 ### What gets installed
 
-| Component | Location |
-|---|---|
-| `ai_terminal.bin` | `/usr/share/MakuluSetup/tools/ai_terminal.bin` |
-| `electra_bar.bin` | `/usr/share/MakuluSetup/tools/electra_bar.bin` |
-| Autostart entry | `~/.config/autostart/electra-bar.desktop` |
+| Component | Desktop | Headless |
+|---|---|---|
+| `ai_terminal.bin` | ✅ `/usr/share/MakuluSetup/tools/` | ✅ `/usr/share/MakuluSetup/tools/` |
+| `electra_bar.bin` | ✅ floating input bar | ❌ requires display |
+| Autostart on login | ✅ `~/.config/autostart/` | ❌ no desktop session |
+| `electra` symlink | ✅ `/usr/local/bin/electra` | ✅ `/usr/local/bin/electra` |
+| Voice input | ✅ faster-whisper + pyaudio | ❌ no microphone |
+| GUI mode (`/gui`) | ✅ GTK3 IDE interface | ❌ requires display |
 
 ### System requirements
 
 - Ubuntu / Debian-based Linux (Ubuntu 22.04+ recommended)
 - x86_64 architecture
-- Internet connection for first run (AI backend is online)
+- Internet connection (AI backend is online)
 
 ### Starting the AI terminal
 
-After install, launch the full terminal interface with:
-
 ```bash
+# Desktop — after install:
 /usr/share/MakuluSetup/tools/ai_terminal.bin
+
+# Headless — after re-login (or: source ~/.bashrc):
+electra
 ```
 
-The **floating Electra Bar** starts automatically on every login. You can also launch it manually:
-
-```bash
-/usr/share/MakuluSetup/tools/electra_bar.bin
-```
+The **floating Electra Bar** (desktop only) starts automatically on every login.
 
 ### Modes
 
-| Mode | How to enter | What it does |
-|---|---|---|
-| **Chat** | `/chat` | Conversational AI assistant |
-| **Coder** | `/coder` | Vibe-coding agent — plan, write, execute code |
-| **Writer** | `/writer` | Long-form content: blogs, novels, documents |
-| **Command** | `/command` | Autonomous OS-level task execution |
-| **GUI** | `/gui` or `--gui` | Full VSCode-style interface with file tree + editor |
+| Mode | How to enter | Desktop | Headless |
+|---|---|---|---|
+| **Chat** | `/chat` | ✅ | ✅ |
+| **Coder** | `/coder` | ✅ | ✅ |
+| **Writer** | `/writer` | ✅ | ✅ |
+| **Command** | `/command` | ✅ | ✅ |
+| **GUI / IDE** | `/gui` or `--gui` | ✅ | ❌ |
+| **Voice input** | mic button | ✅ | ❌ |
 
 ---
 
