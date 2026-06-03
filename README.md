@@ -1,8 +1,61 @@
-# Electra AI Center — Plugin System Guide
+# Electra AI Center
+
 **Connect with us on Discord:** https://discord.gg/rYdcWz3Ch6  
 **A Project by MakuluLinux.com** | **HTML Guide:** https://makululinux.us/ai-terminal-guide.html
 
 ---
+
+## Install
+
+One command installs everything — dependencies, binaries, autostart, and launches the floating bar:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install.sh | bash
+```
+
+That's it. Electra AI Center will be running on your system within minutes.
+
+### What gets installed
+
+| Component | Location |
+|---|---|
+| `ai_terminal.bin` | `/usr/share/MakuluSetup/tools/ai_terminal.bin` |
+| `electra_bar.bin` | `/usr/share/MakuluSetup/tools/electra_bar.bin` |
+| Autostart entry | `~/.config/autostart/electra-bar.desktop` |
+
+### System requirements
+
+- Ubuntu / Debian-based Linux (Ubuntu 22.04+ recommended)
+- x86_64 architecture
+- Internet connection for first run (AI backend is online)
+
+### Starting the AI terminal
+
+After install, launch the full terminal interface with:
+
+```bash
+/usr/share/MakuluSetup/tools/ai_terminal.bin
+```
+
+The **floating Electra Bar** starts automatically on every login. You can also launch it manually:
+
+```bash
+/usr/share/MakuluSetup/tools/electra_bar.bin
+```
+
+### Modes
+
+| Mode | How to enter | What it does |
+|---|---|---|
+| **Chat** | `/chat` | Conversational AI assistant |
+| **Coder** | `/coder` | Vibe-coding agent — plan, write, execute code |
+| **Writer** | `/writer` | Long-form content: blogs, novels, documents |
+| **Command** | `/command` | Autonomous OS-level task execution |
+| **GUI** | `/gui` or `--gui` | Full VSCode-style interface with file tree + editor |
+
+---
+
+## Plugin System Guide
 
 **Electra AI Terminal** is the AI assistant built into MakuluLinux. The core application is distributed as a compiled binary (`ai_terminal.bin`) to protect proprietary backend credentials. The **plugin system** is the open extension layer that allows the community to contribute new features, connect third-party APIs, and extend Electra's capabilities — all without access to the source code.
 
@@ -566,23 +619,6 @@ def get_panel_text() -> str:
     return "🌤 London: 18°C  |  Partly cloudy"
 ```
 
-The panel appears as a tab in the **PLUGINS** section at the bottom of the sidebar. A refresh button lets the user manually update it. The separator and header are hidden when no plugins have registered panels.
-
-You can also register a panel from `run()` to update it after every response:
-
-```python
-def run(prompt: str, context: dict) -> str:
-    result = do_work(prompt)
-    # Update the sidebar with latest status
-    if context.get("gui_active"):
-        context["notify_panel"](
-            PLUGIN_ROUTE_TOKEN,
-            "My Plugin",
-            f"Last query: {prompt[:40]}\nResult: {result[:80]}",
-        )
-    return result
-```
-
 ### Header bar toolbar buttons
 
 Pass a `toolbar_actions` list to `notify_panel`:
@@ -602,11 +638,7 @@ def on_startup(context: dict):
         )
 ```
 
-Each action renders as a small button in the header bar. Clicking it sends the `command` string to the backend exactly as if the user had typed it.
-
 ### `get_gui_panel()` — declarative alternative
-
-Alternatively, declare the panel statically:
 
 ```python
 def get_gui_panel() -> dict:
@@ -626,17 +658,11 @@ Plugins can call each other via `context["plugins"]` — a read-only dict of `{T
 ```python
 def run(prompt: str, context: dict) -> str:
     plugins = context.get("plugins", {})
-
-    # Check if another plugin is loaded before calling it
     groq = plugins.get("GROQ")
     if groq and hasattr(groq, "run"):
         return groq.run(prompt, context)
-
-    # Fall through if the other plugin isn't available
     return "[My Plugin] Groq plugin not loaded."
 ```
-
-This is useful for orchestrator plugins that delegate to specialised plugins depending on the prompt content.
 
 ---
 
@@ -666,8 +692,6 @@ HOOK, COMMAND, and EVENT plugins are never shown to the router — they have no 
 ## 16. Managing Plugins
 
 All plugin management happens via the `/plugin` command.
-
-### Quick Reference
 
 | Command | Action |
 |---|---|
@@ -700,8 +724,6 @@ All plugin management happens via the `/plugin` command.
 
 Plugin Coder Mode is a specialized AI coding environment where Electra knows the full v2.0 plugin API and writes complete, working plugins for you.
 
-### Entering Plugin Coder Mode
-
 **Option A — Enter mode, then describe:**
 ```
 /plugin
@@ -718,68 +740,24 @@ Plugin Coder Mode is a specialized AI coding environment where Electra knows the
 /plugin edit my groq plugin and add on_mode_change support to pause it in Coder mode
 ```
 
-The AI knows all five plugin types, all lifecycle hooks, the full context dict, and all v2.0 features. Just describe what you want in plain English.
-
-### Example session
-
-```
-> /plugin
-[Plugin Coder Mode activated]
-
-> write an AGENT plugin for crypto prices that also shows a GUI sidebar panel
-
-[AI writes crypto_agent.py and saves it]
-
-> add on_startup so it registers the panel automatically when GUI loads
-
-[AI edits the file]
-
-> /plugin reload
-[2 plugin(s) loaded]
-
-> btc price
-[Your AGENT plugin responds, panel appears in GUI sidebar]
-
-> /chat
-[Returns to normal chat]
-```
-
 ---
 
 ## 18. Writing Plugins Manually
 
-### Step 1 — Create the file
-
 ```bash
+# 1. Create the file
 nano ~/.config/ai_plugins/my_plugin.py
-```
 
-### Step 2 — Choose your type and write the plugin
-
-Use the templates in Sections 6–9 as your starting point.
-
-### Step 3 — Create config if needed
-
-```bash
+# 2. Create config if needed
 nano ~/.config/ai_plugins/MY_PLUGIN.json
-```
-```json
-{ "api_key": "your-key-here" }
-```
 
-### Step 4 — Load it
-
-```
+# 3. Load it
+# (inside Electra terminal)
 /plugin reload
-```
 
-### Step 5 — Test it
-
-```
+# 4. Test it
 /plugin test MY_PLUGIN hello world
 ```
-
-Or type one of your trigger phrases normally.
 
 ---
 
@@ -799,15 +777,6 @@ Or type one of your trigger phrases normally.
 ```python
 """
 Plugin Name: Groq Connector
-Author: Community
-Description: Route queries to Groq's fast inference API.
-
-Setup:
-  1. Get a free API key at https://console.groq.com
-  2. Create ~/.config/ai_plugins/GROQ.json:
-     {"api_key": "gsk_your_key_here"}
-  3. /plugin reload
-
 Triggers: ask groq | use groq | groq: | via groq
 Commands: /groq
 """
@@ -840,13 +809,11 @@ def run(prompt: str, context: dict) -> str:
     for t in PLUGIN_TRIGGERS:
         if clean.lower().startswith(t):
             clean = clean[len(t):].strip(" :")
-
     messages = []
     for turn in context.get("chat_history", [])[-4:]:
         if turn.get("role") in ("user", "assistant"):
             messages.append(turn)
     messages.append({"role": "user", "content": clean})
-
     try:
         resp = requests.post(
             _URL,
@@ -861,24 +828,15 @@ def run(prompt: str, context: dict) -> str:
 
 def handle_command(command: str, args: str) -> bool:
     if command == "/groq":
-        if not args:
-            print(f"[Groq] Usage: /groq <question>  |  Model: {_MODEL}")
-        else:
-            print(run(args, {}))
+        print(run(args or "", {}))
         return True
     return False
-
-def get_help() -> str:
-    return f"Groq Connector: fast llama3/mixtral inference. Model: {_MODEL}"
 ```
-
-**Usage:** `ask groq what is quantum computing?` · `/groq explain binary trees`
 
 ---
 
 ### Example 2 — CoinGecko Crypto Prices (AGENT + GUI Panel)
 
-`~/.config/ai_plugins/crypto_agent.py`:
 ```python
 """
 Plugin Name: Crypto Agent
@@ -892,7 +850,7 @@ PLUGIN_VERSION     = "2.0.0"
 PLUGIN_DESCRIPTION = "Live cryptocurrency prices from CoinGecko"
 PLUGIN_AUTHOR      = "Community"
 PLUGIN_ENABLED     = True
-PLUGIN_TYPE        = "AGENT"           # first-class routing — same as GOOGLE/DISCORD
+PLUGIN_TYPE        = "AGENT"
 
 PLUGIN_TRIGGERS    = ["crypto price", "bitcoin price", "btc price",
                       "eth price", "ethereum price", "coin price",
@@ -900,11 +858,6 @@ PLUGIN_TRIGGERS    = ["crypto price", "bitcoin price", "btc price",
 PLUGIN_ROUTE_TOKEN = "CRYPTO"
 PLUGIN_COMMANDS    = ["/crypto"]
 PLUGIN_REQUIRES    = []
-
-PLUGIN_TOOLBAR_ACTIONS = [
-    {"label": "BTC Price", "icon": "go-up-symbolic",  "command": "btc price"},
-    {"label": "ETH Price", "icon": "go-up-symbolic",  "command": "eth price"},
-]
 
 _COIN_MAP = {
     "btc": "bitcoin",  "bitcoin": "bitcoin",
@@ -918,11 +871,10 @@ _last_prices = {}
 def on_startup(context: dict):
     if context.get("gui_active"):
         context["notify_panel"](
-            token           = PLUGIN_ROUTE_TOKEN,
-            label           = "Crypto",
-            content         = _panel_content,
-            refresh_s       = 120,
-            toolbar_actions = PLUGIN_TOOLBAR_ACTIONS,
+            token        = PLUGIN_ROUTE_TOKEN,
+            label        = "Crypto",
+            content      = _panel_content,
+            refresh_s    = 120,
         )
 
 def _panel_content() -> str:
@@ -937,18 +889,13 @@ def _panel_content() -> str:
 
 def run(prompt: str, context: dict) -> str:
     p = prompt.lower()
-    found = None
-    for symbol, coin_id in _COIN_MAP.items():
-        if symbol in p:
-            found = coin_id
-            break
+    found = next((cid for sym, cid in _COIN_MAP.items() if sym in p), None)
     if not found:
         return "[Crypto] Couldn't identify coin. Try: 'btc price' or '/crypto eth'"
     try:
         r = requests.get(
             "https://api.coingecko.com/api/v3/simple/price",
-            params={"ids": found, "vs_currencies": "usd",
-                    "include_24hr_change": "true"},
+            params={"ids": found, "vs_currencies": "usd", "include_24hr_change": "true"},
             timeout=10,
         )
         r.raise_for_status()
@@ -957,14 +904,7 @@ def run(prompt: str, context: dict) -> str:
         price = data.get("usd", "N/A")
         chg   = data.get("usd_24h_change", 0)
         arrow = "📈" if chg >= 0 else "📉"
-        # Refresh the GUI panel with latest data
-        if context.get("gui_active"):
-            context["notify_panel"](PLUGIN_ROUTE_TOKEN, "Crypto", _panel_content)
-        return (
-            f"**{found.title()}**\n"
-            f"  Price : ${price:,.2f} USD\n"
-            f"  24h   : {arrow} {chg:+.2f}%"
-        )
+        return f"**{found.title()}**\n  Price : ${price:,.2f} USD\n  24h   : {arrow} {chg:+.2f}%"
     except Exception as e:
         return f"[Crypto] Error: {e}"
 
@@ -975,77 +915,15 @@ def handle_command(command: str, args: str) -> bool:
     return False
 ```
 
-**Usage:** `btc price` · `ethereum price` · `/crypto sol` · GUI panel auto-updates every 2 min
-
----
-
-### Example 3 — Session Logger (HOOK)
-
-`~/.config/ai_plugins/session_logger.py`:
-```python
-"""
-Logs every mode change and file write for the current session.
-No routing involvement — pure HOOK plugin.
-"""
-import os, datetime
-
-PLUGIN_NAME        = "Session Logger"
-PLUGIN_VERSION     = "1.0.0"
-PLUGIN_DESCRIPTION = "Logs mode switches and file writes to ~/.electra/session.log"
-PLUGIN_ENABLED     = True
-PLUGIN_TYPE        = "HOOK"
-PLUGIN_TRIGGERS    = []
-PLUGIN_ROUTE_TOKEN = "SESSION_LOG"
-PLUGIN_COMMANDS    = []
-
-_LOG = os.path.join(os.path.expanduser("~"), ".electra", "session.log")
-
-def _w(msg):
-    os.makedirs(os.path.dirname(_LOG), exist_ok=True)
-    ts = datetime.datetime.now().strftime("%H:%M:%S")
-    with open(_LOG, "a") as f:
-        f.write(f"[{ts}] {msg}\n")
-
-def run(prompt, context): return ""
-
-def on_startup(context):
-    _w(f"=== Session started  model={context.get('model','?')} "
-       f"gui={context.get('gui_active',False)} ===")
-
-def on_shutdown(context):
-    _w("=== Session ended ===")
-
-def on_mode_change(old, new):
-    _w(f"Mode: {old} → {new}")
-
-def on_file_write(path, content):
-    _w(f"Wrote: {path}  ({len(content.splitlines())} lines)")
-```
-
 ---
 
 ## 20. Testing and Debugging
 
-### Test directly
-
 ```
-/plugin test GROQ what is machine learning?
-/plugin test CRYPTO btc price
-/plugin test MY_HOOK on_startup
-```
-
-### Check if your plugin loaded
-
-```
-/plugin list
-```
-
-If it isn't listed, check the terminal output for load errors:
-
-```bash
-/usr/share/MakuluSetup/tools/ai_terminal.bin
-# or
-python3 /path/to/ai_terminal.py
+/plugin list                          # confirm it loaded
+/plugin test GROQ what is ML?         # call run() directly
+/plugin reload                        # hot-reload after edits
+/plugin dir                           # open plugin folder in Nemo
 ```
 
 **Common load failures:**
@@ -1058,188 +936,67 @@ python3 /path/to/ai_terminal.py
 | Duplicate token warning | Another plugin uses the same `PLUGIN_ROUTE_TOKEN` |
 | Syntax error | Python syntax error in plugin file |
 
-### Hot reload after edits
-
-```
-/plugin reload
-```
-
-No restart needed. Changes to any plugin file take effect immediately. `on_startup` hooks fire again for newly loaded HOOK plugins.
-
-### Open plugin directory
-
-```
-/plugin dir
-```
-
-Opens `~/.config/ai_plugins/` in Nemo.
-
-### Error output
-
-If `run()` raises an exception, it's caught and shown:
-```
-[Plugin: My Plugin] Error in run(): ConnectionTimeout
-```
-The app falls through to normal chat. Your plugin can never crash Electra.
-
 ---
 
 ## 21. Plugin Ideas and Use Cases
 
-### AGENT Plugins (first-class features)
-- **OpenAI** — GPT-4o, o1, o3 models
-- **Anthropic** — Claude models directly
-- **Groq** — Ultra-fast llama3 / mixtral inference
-- **Together AI** — 50+ open-source models
-- **Perplexity** — Web-grounded answers
-- **Weather** — OpenWeatherMap / WeatherAPI
-- **News** — NewsAPI with GUI panel showing headlines
-
-### HOOK Plugins (observability & automation)
-- **Session logger** — Log all mode changes, file writes, prompts
-- **Backup trigger** — Run a backup when Coder writes to certain paths
-- **Prompt guard** — Sanitise or translate prompts in `on_message_pre`
-- **Analytics** — Track usage patterns per mode
-- **Notification** — Push phone notification on Coder session complete
-
-### ROUTER/COMMAND Plugins (quick integrations)
-- **Crypto prices** — CoinGecko, Binance
-- **Stock ticker** — Yahoo Finance, Alpha Vantage
-- **Earthquake alerts** — USGS live feed
-- **Home Assistant** — Lights, switches, climate
-- **Tasmota / MQTT** — Generic IoT
-- **Notion / Obsidian** — Read/write notes
-- **Todoist / Taskwarrior** — Task management
-- **Plex / Jellyfin** — Media server control
-- **Jira / Linear** — Ticket lookup
-
-### MakuluLinux-Specific
-- **System monitor** — CPU/RAM/disk with GUI panel
-- **Timeshift** — Snapshot info and trigger
-- **Package watcher** — Pending updates notification
-- **Nemo integration** — File operations via chat
+**AGENT Plugins** — OpenAI, Anthropic, Groq, Perplexity, Weather, News, Stock ticker  
+**HOOK Plugins** — Session logger, backup trigger, prompt guard, phone notifications  
+**ROUTER/COMMAND** — Crypto prices, Home Assistant, Notion, Todoist, Plex, Jira  
+**MakuluLinux-specific** — System monitor panel, Timeshift snapshots, package watcher
 
 ---
 
 ## 22. Rules and Best Practices
 
-### Always do these
-
 ```python
-# ✅ Read credentials from config — never hardcode
+# ✅ Read credentials from config
 def setup(config: dict) -> bool:
     global _API_KEY
     _API_KEY = config.get("api_key", "")
     return bool(_API_KEY)
 
-# ✅ Wrap all external calls in try/except
-def run(prompt: str, context: dict) -> str:
-    try:
-        resp = requests.get("https://api.example.com/data", timeout=10)
-        resp.raise_for_status()
-        return resp.json()["result"]
-    except requests.exceptions.Timeout:
-        return "[My Plugin] Request timed out."
-    except Exception as e:
-        return f"[My Plugin] Error: {e}"
+# ✅ Wrap all external calls in try/except with timeout
+r = requests.get("https://api.example.com", timeout=10)
 
 # ✅ Return "" to fall through when you can't handle it
-def run(prompt: str, context: dict) -> str:
+def run(prompt, context):
     if "my trigger" not in prompt.lower():
-        return ""   # let normal chat handle it
-    return do_work(prompt)
+        return ""
 
-# ✅ Use context["print_fn"] for progressive output
-def run(prompt: str, context: dict) -> str:
-    out = context["print_fn"]
-    out("Fetching data…")
-    result = fetch_slowly()
-    out(f"**Done:** {result}")
-    return ""
-
-# ✅ Use context["user_home"] — never hardcode paths or usernames
+# ✅ Use context["user_home"] — never hardcode paths
 log = os.path.join(context["user_home"], ".electra", "my_plugin.log")
 
-# ✅ Declare external packages in PLUGIN_REQUIRES
-PLUGIN_REQUIRES = ["feedparser>=6.0"]
-
-# ✅ For HOOK/COMMAND/EVENT: set PLUGIN_TRIGGERS = []
-PLUGIN_TYPE    = "HOOK"
-PLUGIN_TRIGGERS = []
-```
-
-### Never do these
-
-```python
-# ❌ Never hardcode credentials
-_API_KEY = "sk-abc123..."
-
-# ❌ Never use broad triggers (will steal normal chat)
-PLUGIN_TRIGGERS = ["the", "what", "how", "search", "help"]
-
-# ❌ Never use a reserved token
-PLUGIN_ROUTE_TOKEN = "CHAT"     # core mode
-PLUGIN_ROUTE_TOKEN = "GOOGLE"   # built-in agent
-
-# ❌ Never import from ai_terminal — it's a closed binary
-from ai_terminal import something
-
-# ❌ Never hardcode usernames or absolute user paths
-open("/home/jacque/.myfile")    # use context["user_home"] instead
+# ❌ Never hardcode credentials or broad triggers
+# ❌ Never import from ai_terminal (closed binary)
+# ❌ Never hardcode /home/username paths
 ```
 
 ---
 
 ## 23. Reserved Tokens
 
-Do not use any of the following as your `PLUGIN_ROUTE_TOKEN` — they are taken by core modes and built-in agents:
+Do not use these as your `PLUGIN_ROUTE_TOKEN`:
 
 ```
-CHAT          CODER         WRITER        COMMAND       LIVE
-IMAGE         VIDEO         AUDIO         TRAVEL        NOVEL
-PLAN          PLUGIN        GOOGLE        HOME_ASSISTANT
-RSS           GITHUB_AGENT  SPOTIFY       DISCORD       REDDIT
-FINANCE       TELEGRAM_SERVICE            AGENT_SERVICE
-ISO_AGENT     APP_AGENT     NVIDIA_AGENT  TROUBLESHOOT
-ASK_COMMAND   ASK_CODER
+CHAT  CODER  WRITER  COMMAND  LIVE  IMAGE  VIDEO  AUDIO  TRAVEL  NOVEL
+PLAN  PLUGIN  GOOGLE  HOME_ASSISTANT  RSS  GITHUB_AGENT  SPOTIFY
+DISCORD  REDDIT  FINANCE  TELEGRAM_SERVICE  AGENT_SERVICE  ISO_AGENT
+APP_AGENT  NVIDIA_AGENT  TROUBLESHOOT  ASK_COMMAND  ASK_CODER  WEATHER
 ```
 
 ---
 
 ## 24. Contributing
 
-### Submitting a plugin
-
 1. Test your plugin locally and confirm it works
 2. Strip any personal API keys from the plugin file
-3. Include a clear docstring header (see template below)
+3. Include a clear docstring header with name, author, version, setup instructions
 4. Submit a PR to the Electra plugins repository
 5. Or use `/plugin publish <filename.py>` to submit directly from the terminal
 
-### Plugin docstring template for submissions
-
-```python
-"""
-Plugin Name   : Your Plugin Name
-Author        : YourName / GitHub handle
-Version       : 1.0.0
-Plugin Type   : ROUTER | AGENT | HOOK | COMMAND
-Description   : What it does in one sentence.
-
-Setup:
-  1. Get an API key at https://...
-  2. Create ~/.config/ai_plugins/<TOKEN>.json:
-     {"api_key": "your-key-here"}
-  3. /plugin reload
-
-Requires: pip3 install somepackage   (if applicable)
-
-Triggers : phrase one | phrase two
-Commands : /mycommand
-"""
-
 ---
 
-*Electra AI — MakuluLinux*  
+*Electra AI Center — MakuluLinux*  
 *Plugin System v2.0*  
 *© MakuluLinux.com — Community contributions welcome*
