@@ -31,10 +31,11 @@ echo -e "  ${GREY}An all-in-one AI terminal: Chat · Coder · Writer · Command$
 echo ""
 
 # ── Privilege check ───────────────────────────────────────────────────────────
+# When piped via curl, $0 is just "bash" — not a file we can re-exec.
+# Instead we re-download and pipe directly into sudo bash.
 if [[ $EUID -ne 0 ]]; then
-    _warn "This installer needs sudo for system directories."
-    _warn "Re-running with sudo..."
-    exec sudo bash "$0" "$@"
+    _warn "This installer needs sudo. Re-running with elevated privileges..."
+    exec sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install.sh)"
 fi
 
 REAL_USER="${SUDO_USER:-$USER}"

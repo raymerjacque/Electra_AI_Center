@@ -40,9 +40,8 @@ echo ""
 
 # ── Privilege check ───────────────────────────────────────────────────────────
 if [[ $EUID -ne 0 ]]; then
-    _warn "This installer needs sudo for system directories."
-    _warn "Re-running with sudo..."
-    exec sudo bash "$0" "$@"
+    _warn "This installer needs sudo. Re-running with elevated privileges..."
+    exec sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install-headless.sh)"
 fi
 
 REAL_USER="${SUDO_USER:-$USER}"
