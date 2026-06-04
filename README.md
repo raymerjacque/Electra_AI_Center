@@ -2,23 +2,75 @@
 
 [![Electra AI Center](https://makululinux.us/ai-os.png)](https://makululinux.us/ai-os.html)
 
-**Full integrated into:** https://makululinux.us/ai-os.html
+**Fully integrated into:** https://makululinux.us/ai-os.html
 
 **Connect with us on Discord:** https://discord.gg/rYdcWz3Ch6  
 **A Project by MakuluLinux.com** | **HTML Guide:** https://makululinux.us/ai-terminal-guide.html
 
-## What is The AI Center ?
 ---
 
-Electra AI Center is MakuluLinux's flagship all-in-one AI productivity suite, delivered as a terminal application with an optional desktop GUI. It is the terminal-native equivalent of a full AI workbench — combining the conversational power of a chat assistant, the autonomous file-editing muscle of an AI coding agent, the depth of a professional writing suite, the imagination of a full novel-generation pipeline, and the system-level authority of a natural-language command executor — all within a single application that ships as a compiled binary on every installation of MakuluLinux. And now available to Everyone else.
+## What is The AI Center?
 
-Think of it as your personal AI engineer, writer, shell expert, home-automation controller, music controller, news reader, and research assistant — all accessible from one terminal window, or from your desktop via the lightweight Electra Bar widget or the full Electra Gui.
+Electra AI Center is MakuluLinux's flagship all-in-one AI productivity suite, delivered as a terminal application with an optional desktop GUI. It is the terminal-native equivalent of a full AI workbench — combining the conversational power of a chat assistant, the autonomous file-editing muscle of an AI coding agent, the depth of a professional writing suite, the imagination of a full novel-generation pipeline, and the system-level authority of a natural-language command executor — all within a single application that ships as a compiled binary on every installation of MakuluLinux. And now available to everyone else.
 
-In a Nutshell, it is an ALL in One Autonomous AI Control Center specially designed for Linux.
+Think of it as your personal AI engineer, writer, shell expert, home-automation controller, music controller, news reader, and research assistant — all accessible from one terminal window, or from your desktop via the lightweight Electra Bar widget or the full Electra GUI.
+
+In a nutshell: an **all-in-one autonomous AI control center** specially designed for Linux.
 
 ---
 
-## Install
+## AI Models — 90+ Available
+
+Electra connects to **90+ AI models** across multiple providers — all through a single backend, no individual API keys needed for most. Models are ranked live by speed every time you check.
+
+### 🏆 Headline Models
+
+| Model | Provider | Best For |
+|---|---|---|
+| **DeepSeek V4 Pro** `671B` | DeepSeek | Deep reasoning, complex code, research |
+| **DeepSeek V4 Flash** `671B` | DeepSeek | Fast reasoning, coding, general tasks |
+| **DeepSeek R1-0528** `671B` | DeepSeek | Extended chain-of-thought reasoning |
+| **Kimi K2.6** `1T MoE` | Moonshot AI | 1M context, agents, long-form analysis |
+| **Step 3.7 Flash** `196B` | StepFun | Long-form writing, novel generation, research |
+| **Step 3.5 Flash** `196B` | StepFun | Coding, chat, fast general use |
+| **Qwen3-Coder 480B** `MoE` | Alibaba | Elite code generation across all languages |
+| **Qwen3.5 397B** `MoE` | Alibaba | Frontier reasoning and coding |
+| **Qwen3.5 122B** | Alibaba | Balanced speed and quality |
+| **Qwen 3.7 Max** | Qwen Cloud | Extended reasoning, 1M context |
+| **Mistral Large 3** `675B` | Mistral | Enterprise reasoning, multilingual |
+| **Mistral Medium 3.5** `128B` | Mistral | Balanced quality and speed |
+| **Codestral** `22B` | Mistral | Specialist code model |
+| **Devstral** `24B` | Mistral | Agentic software engineering |
+| **GPT-OSS 120B** | OpenAI | OpenAI open-weight, tool use |
+| **GPT o4-mini** | OpenAI | Fast reasoning with thinking |
+| **Nemotron 3 Super 120B** | NVIDIA | Agentic reasoning, tool calling |
+| **Nemotron 3 Nano 30B** | NVIDIA | Fast chat, always-on |
+| **Gemma 4 31B** | Google | Efficient multimodal reasoning |
+| **Gemini 2.5 Flash Lite** | Google | Ultra-fast responses |
+| **GLM-5.1** `130B` | Zhipu AI | Multilingual, long context |
+| **MiniMax M2.7** | MiniMax | 1M context, agentic tasks |
+| **Llama 3.3 70B** | Meta | Open-weight, fast, reliable |
+| **Seed-OSS 36B** | ByteDance | Efficient general purpose |
+
+> Most models are available across **multiple providers** (NVIDIA, SiliconFlow, ModelScope, OpenRouter) — Electra automatically picks the fastest live instance. Pro tier unlocks the full catalogue.
+
+### Free vs Pro Models
+
+```
+Free tier  — fast models always available (Nemotron 30B, GPT-OSS 20B, Step 3.5, Gemma 4, etc.)
+Pro tier   — full catalogue unlocked including DeepSeek V4 Pro, Kimi K2.6, Qwen3-Coder 480B, 
+             Mistral Large, GPT-OSS 120B, Nemotron Super 120B, and all frontier models
+Token      — enter /unlock with your access token for instant Pro access
+```
+
+Browse the full live-ranked list anytime inside Electra:
+```
+/model
+```
+
+---
+
+
 
 ### 🖥️ Desktop / Laptop (with GUI)
 
@@ -38,7 +90,7 @@ curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main
 
 That's it. Electra AI Center will be running on your system within minutes.
 
-### What gets installed
+### What Gets Installed
 
 | Component | Desktop | Headless |
 |---|---|---|
@@ -49,34 +101,254 @@ That's it. Electra AI Center will be running on your system within minutes.
 | Voice input | ✅ faster-whisper + pyaudio | ❌ no microphone |
 | GUI mode (`/gui`) | ✅ GTK3 IDE interface | ❌ requires display |
 
-### System requirements
+### System Requirements
 
 - Ubuntu / Debian-based Linux (Ubuntu 22.04+ recommended)
 - x86_64 architecture
 - Internet connection (AI backend is online)
 
-### Starting the AI terminal
+### Starting the AI Terminal
 
 ```bash
 # Desktop — after install:
 /usr/share/MakuluSetup/tools/ai_terminal.bin
 
-# Headless — after re-login (or: source ~/.bashrc):
+# Or via symlink (desktop + headless):
 electra
+
+# Start directly in GUI mode:
+electra --gui
 ```
 
-The **floating Electra Bar** (desktop only) starts automatically on every login.
+The **floating Electra Bar** (desktop only) starts automatically on every login — type anything into it and press Enter.
 
-### Modes
+---
 
-| Mode | How to enter | Desktop | Headless |
-|---|---|---|---|
-| **Chat** | `/chat` | ✅ | ✅ |
-| **Coder** | `/coder` | ✅ | ✅ |
-| **Writer** | `/writer` | ✅ | ✅ |
-| **Command** | `/command` | ✅ | ✅ |
-| **GUI / IDE** | `/gui` or `--gui` | ✅ | ❌ |
-| **Voice input** | mic button | ✅ | ❌ |
+## Modes
+
+Electra has five core operating modes. Type the command to switch at any time:
+
+| Mode | Command | What it does |
+|---|---|---|
+| **Chat** | `/chat` | Conversational AI — general questions, research, brainstorming |
+| **Coder** | `/coder` | Autonomous coding agent — reads, writes, edits, runs your code |
+| **Writer** | `/writer` | Content generation — articles, blogs, essays, documents, emails |
+| **Novel** | `/novel` | Full long-form book pipeline — 25-chapter novels with scene-by-scene generation |
+| **Command** | `/command` | Natural-language Linux commands — no shell knowledge needed |
+| **GUI / IDE** | `/gui` | Full desktop IDE — file tree, editor, chat panel, terminal |
+| **Voice** | mic button | Voice input via faster-whisper (desktop only) |
+
+The **routing agent** automatically detects intent — just type naturally and Electra picks the right mode. You don't need to switch manually.
+
+---
+
+## Usage — Quick Start
+
+### Chat Mode
+```
+▶ what is a Makefile and when should I use one?
+▶ explain docker networking to me like I'm 10
+▶ compare rust vs go for systems programming
+```
+
+### Coder Mode
+```
+▶ /coder
+▶ build me a FastAPI app with JWT auth and SQLite
+▶ /plan         ← structured architect → developer → reviewer workflow
+▶ /debug        ← AI analyses the last error output
+▶ /research async patterns in Python
+```
+> In Coder mode, Electra reads your actual files, writes changes, runs commands, and iterates autonomously. Point it at a project with `/set /path/to/project`.
+
+### Writer Mode
+```
+▶ /writer
+▶ write a blog post about the future of open source AI
+▶ draft a cover letter for a senior DevOps role at a startup
+▶ /outline The Ethics of Autonomous Vehicles
+▶ /translate French
+▶ /refine make it more formal and cut 20%
+▶ /export pdf
+```
+
+### Novel Mode
+```
+▶ /novel
+▶ write a novel, 25 chapters, 3 scenes each — a family surviving on a lunar colony. Call it Moon Walkers
+```
+> Novel mode generates a complete structured book: blueprint → book overview → chapter outlines → scene-by-scene writing → full manuscript. All files are saved to `~/workspace/`.
+
+### Command Mode
+```
+▶ /command
+▶ find all files larger than 500MB in my home folder
+▶ set up a cron job to backup ~/Documents every night at 2am
+▶ show me what's using the most RAM right now
+▶ install docker and add me to the docker group
+```
+
+### GUI / IDE Mode
+```bash
+electra --gui          # Launch directly in GUI mode
+# Or from inside terminal:
+/gui
+```
+The GUI provides a VSCode-style interface: file tree on the left, editor in the centre, AI chat panel on the right, and a status bar at the bottom.
+
+---
+
+## Built-in Services & Integrations
+
+Electra ships with a suite of always-available integrations. No extra setup for most — just use them:
+
+| Service | Command | What it does |
+|---|---|---|
+| **Weather** | `/weather London` | Live weather and forecasts for any city |
+| **Telegram Bridge** | `/telegram` | Control Electra via Telegram — send prompts from your phone |
+| **Discord Bot** | `/discord` | Discord channel integration |
+| **Reddit** | `/reddit` | Browse, summarise, and interact with Reddit |
+| **Spotify** | `/spotify play chill beats` | Spotify playback control |
+| **RSS / News** | `/rss` | Subscribe to and summarise RSS feeds |
+| **GitHub** | `/github` | Repo management, issue tracking, PR summaries |
+| **Home Assistant** | `/ha` | Control your smart home devices |
+| **Finance / Hustle** | `/hustle` or `/finance` | Personal finance tracker and side hustle income manager |
+| **Blog Publisher** | `/blog` | AI-assisted blog writing and publishing via Beehiiv |
+| **Travel Planner** | `/travel plan a 5-night trip to Tokyo` | Full itinerary planning |
+| **Image Generation** | `/image a neon city at night` | AI image generation |
+| **QR Codes** | `/qr https://makululinux.us` | Generate QR codes instantly |
+| **Screenshots / OCR** | `/screenshot` `/ocr` | Capture screen and extract or explain text |
+| **SSH Manager** | `/ssh add home user@192.168.1.1` | Save and connect to SSH hosts |
+| **Docker** | `/docker ps` | Manage Docker containers naturally |
+| **System Monitor** | `/monitor cpu=85 ram=90` | Alerts when CPU/RAM cross thresholds |
+| **Package Manager** | `/pkg install neovim` | Natural language apt/snap/flatpak |
+| **Reminders** | `/remind 30m take a break` | Set timed reminders |
+| **Clipboard AI** | `/clip explain` | Analyse whatever is in your clipboard |
+| **Heartbeat Agent** | `/heartbeat` | Background autonomous task runner daemon |
+
+---
+
+## Key Commands Reference
+
+### Navigation & Session
+| Command | Description |
+|---|---|
+| `/help` | Show all commands |
+| `/model` | Browse and select AI models |
+| `/newchat` | Start a fresh conversation |
+| `/cls` or `/clear` | Clear the terminal |
+| `/refresh` | Re-check server and update model list |
+| `/set <path>` | Set working directory |
+| `/cd <path>` | Change directory |
+
+### AI & Models
+| Command | Description |
+|---|---|
+| `/model` | List all models with speed rankings, select one |
+| `/think` | Toggle extended reasoning/thinking mode |
+| `/providers` | Manage third-party API keys (OpenAI, Anthropic, Gemini, Kimi, Mistral) |
+| `/openai` | Add/update your OpenAI API key |
+| `/claude` | Add/update your Anthropic API key |
+| `/gemini` | Add/update your Google Gemini key |
+| `/kimi` | Add/update your Moonshot (Kimi) key |
+| `/mistral` | Add/update your Mistral key |
+
+### Coding & Projects
+| Command | Description |
+|---|---|
+| `/plan` | Activate structured planning: Architect → Developer → Reviewer |
+| `/debug [error]` | AI diagnoses the last error or a pasted error |
+| `/research <topic>` | Deep research pass before starting code |
+| `/init [type] [name]` | Scaffold a new project (e.g. `/init flask myapi`) |
+| `/template list` | List available project templates |
+| `/index` | Re-index the current project for AI context |
+| `/lint [file]` | Run linter on current file or project |
+| `/sandbox` | Isolated test environment |
+| `/dry-run [on\|off]` | Preview commands before executing |
+| `/rollback [N\|all]` | Roll back the last N AI file changes |
+| `/undo [all]` | Undo last edit |
+| `/autowrite [on\|off]` | Toggle auto file-write (no confirmation prompt) |
+| `/dp` | Toggle diff preview for autonomous operations |
+| `/docker` | Manage Docker containers |
+
+### Writing & Content
+| Command | Description |
+|---|---|
+| `/outline <topic>` | Generate a structured outline |
+| `/refine <instructions>` | Rewrite last output with new instructions |
+| `/translate <lang>` | Translate last output to any language |
+| `/style [file]` | Apply a style guide to writing |
+| `/format <rules>` | Reformat content by rules |
+| `/wordcount` | Show word count and progress toward target |
+| `/export <fmt> [file]` | Export to pdf / docx / md / txt |
+| `/import <file>` | Import a document for editing |
+| `/append <file>` | Append AI content to an existing file |
+| `/inspect` | Novel inspector — check completeness and consistency |
+| `/blog post` | Start a guided blog writing session |
+
+### Memory & Context
+| Command | Description |
+|---|---|
+| `/memory` | View and manage conversation memory |
+| `/remember [note]` | Pin a note to persistent memory |
+| `/pin <file>` | Pin a file as always-in-context |
+| `/pins` | List pinned files |
+| `/compact` | Summarise and compress conversation history |
+| `/history export` | Export full conversation history |
+
+### System & Utilities
+| Command | Description |
+|---|---|
+| `/screenshot [q]` | Capture screen, optionally ask AI about it |
+| `/ocr <image>` | Extract and explain text from an image |
+| `/clip explain` | Analyse clipboard content with AI |
+| `/encrypt` / `/decrypt` | Encrypt or decrypt text |
+| `/notify [on\|off]` | Toggle desktop notifications |
+| `/remind <t> <msg>` | Set a timed reminder (e.g. `/remind 1h check build`) |
+| `/schedule add <t> <msg>` | Add a scheduled reminder |
+| `/search <q>` | Web search from the terminal |
+| `/fetch <url>` | Fetch and summarise a URL |
+| `/qr <text\|url>` | Generate a QR code |
+| `/share` | Share last output |
+| `/open [file]` | Open a file in the default application |
+| `/repair` | AI self-repair — diagnose and fix broken Electra config |
+| `/repair forge <desc>` | AI generates a custom repair tool |
+
+### Account & Access
+| Command | Description |
+|---|---|
+| `/account` or `/whoami` | Show your current account, tier, and daily limits |
+| `/login` | Log in to your Patreon/Electra account |
+| `/logout` | Log out |
+| `/unlock` | Enter an access token to unlock Pro models |
+| `/profile` | View your usage profile |
+
+### Plugins
+| Command | Description |
+|---|---|
+| `/plugin list` | List all loaded plugins |
+| `/plugin reload` | Hot-reload plugins after editing |
+| `/plugin install <file>` | Install a plugin from a file |
+| `/plugin publish <file>` | Submit a plugin to the community repo |
+| `/plugin community` | Browse community plugins |
+| `/plugin test <TOKEN> <q>` | Test a plugin directly |
+| `/plugin dir` | Open plugin folder in file manager |
+
+---
+
+## Access Tiers
+
+| Tier | Models | Daily Limit |
+|---|---|---|
+| **Free** | Subset of fast models | Standard |
+| **Trial** | All models unlocked | Trial period |
+| **Token** | All models unlocked | Token limit |
+| **Pro (Patreon)** | All models unlocked | Tier limit |
+
+- Free users see available models; locked models are marked `🔒 [Pro — locked]`
+- Pro tiers: Private, Corporal, Sergeant, Major, Commander — each with increasing daily limits
+- Upgrade at: https://patreon.com/c/makululinux/membership
+- Token holders: use `/unlock` to enter your token and immediately unlock all models
 
 ---
 
@@ -399,417 +671,287 @@ Example HOOK plugin — activity logger.
 Logs every mode switch, file write, and message to ~/.electra/plugin_activity.log
 """
 import os
-import datetime
+from datetime import datetime
 
 PLUGIN_NAME        = "Activity Logger"
 PLUGIN_VERSION     = "1.0.0"
-PLUGIN_DESCRIPTION = "Logs mode changes, file writes, and messages to a log file"
+PLUGIN_DESCRIPTION = "Logs mode switches, file writes, and messages"
 PLUGIN_AUTHOR      = "YourName"
 PLUGIN_ENABLED     = True
 PLUGIN_TYPE        = "HOOK"
 
-PLUGIN_TRIGGERS    = []        # ← HOOK plugins never intercept routing
-PLUGIN_ROUTE_TOKEN = "ACTIVITY_LOG"
+PLUGIN_TRIGGERS    = []   # HOOK — no routing involvement
+PLUGIN_ROUTE_TOKEN = "ACTIVITY_LOGGER"
 PLUGIN_COMMANDS    = []
 PLUGIN_REQUIRES    = []
 
-_LOG_FILE = os.path.join(os.path.expanduser("~"), ".electra", "plugin_activity.log")
-
-def _log(msg: str):
-    try:
-        os.makedirs(os.path.dirname(_LOG_FILE), exist_ok=True)
-        ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(_LOG_FILE, "a") as f:
-            f.write(f"[{ts}] {msg}\n")
-    except Exception:
-        pass
-
-def run(prompt: str, context: dict) -> str:
-    return ""   # HOOK plugins always return "" — they don't handle routing
+_log_path = ""
 
 def on_startup(context: dict):
-    _log(f"App started — session {context.get('session_id', '')[:8]}  "
-         f"model={context.get('model', '?')}  "
-         f"gui={context.get('gui_active', False)}")
-
-def on_shutdown(context: dict):
-    _log("App exiting cleanly.")
+    global _log_path
+    _log_path = os.path.join(context["user_home"], ".electra", "plugin_activity.log")
+    _write(f"Electra started — session {context.get('session_id', '?')}")
 
 def on_mode_change(old_mode: str, new_mode: str):
-    _log(f"Mode: {old_mode} → {new_mode}")
+    _write(f"Mode: {old_mode} → {new_mode}")
 
 def on_file_write(path: str, content: str):
-    lines = len(content.splitlines())
-    _log(f"File written: {path}  ({lines} lines)")
-
-def on_message_pre(prompt: str) -> str:
-    """
-    Example: silently strip a profanity word before routing.
-    Return "" to leave the prompt unchanged, or a modified string.
-    """
-    return ""   # pass through unchanged
+    _write(f"File written: {path}  ({len(content.split())} words)")
 
 def on_message_post(prompt: str, response: str):
-    words = len(response.split())
-    _log(f"Response: {words} words  |  prompt[:60]={prompt[:60]!r}")
+    _write(f"Q: {prompt[:60]}…  A: {len(response)} chars")
+
+def _write(msg: str):
+    if not _log_path:
+        return
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(_log_path, "a", encoding="utf-8") as f:
+        f.write(f"[{ts}] {msg}\n")
 ```
 
 ---
 
 ## 9. COMMAND Plugin — Slash Commands Only
 
-Use COMMAND type when you only need slash commands and no routing involvement.
+COMMAND plugins register slash commands without any routing involvement. They are not visible to the router at all.
 
 ```python
-"""
-Quick system shortcuts as slash commands.
-"""
-import subprocess
-
-PLUGIN_NAME        = "Dev Tools"
+PLUGIN_NAME        = "Custom Commands"
 PLUGIN_VERSION     = "1.0.0"
-PLUGIN_DESCRIPTION = "Developer shortcuts — git status, docker ps, etc."
+PLUGIN_DESCRIPTION = "Adds /greet and /bye commands"
 PLUGIN_AUTHOR      = "YourName"
 PLUGIN_ENABLED     = True
 PLUGIN_TYPE        = "COMMAND"
 
-PLUGIN_TRIGGERS    = []        # no routing
-PLUGIN_ROUTE_TOKEN = "DEVTOOLS"
-PLUGIN_COMMANDS    = ["/gs", "/dp", "/sysinfo"]
+PLUGIN_TRIGGERS    = []
+PLUGIN_ROUTE_TOKEN = "MY_COMMANDS"
+PLUGIN_COMMANDS    = ["/greet", "/bye"]
 PLUGIN_REQUIRES    = []
 
-def run(prompt: str, context: dict) -> str:
-    return ""   # COMMAND plugins don't handle routing
-
-def _sh(cmd: str) -> str:
-    try:
-        return subprocess.check_output(
-            cmd, shell=True, stderr=subprocess.STDOUT,
-            timeout=10, text=True
-        ).strip() or "(no output)"
-    except Exception as e:
-        return f"Error: {e}"
-
 def handle_command(command: str, args: str) -> bool:
-    if command == "/gs":
-        print(_sh("git status"))
+    if command == "/greet":
+        print(f"Hello, {args or 'world'}!")
         return True
-    if command == "/dp":
-        print(_sh("docker ps --format 'table {{.Names}}\t{{.Status}}'"))
-        return True
-    if command == "/sysinfo":
-        print(_sh("uptime && free -h && df -h /"))
+    if command == "/bye":
+        print("Goodbye!")
         return True
     return False
-
-def get_help() -> str:
-    return (
-        "Dev Tools: quick system shortcuts\n"
-        "  /gs       — git status\n"
-        "  /dp       — docker ps\n"
-        "  /sysinfo  — uptime, memory, disk"
-    )
 ```
 
 ---
 
 ## 10. Optional Functions — All Types
 
-These functions can be defined in any plugin type:
-
-### `setup(config: dict) -> bool`
-
-Called once at load time (and on `/plugin reload`). `config` is loaded automatically from `~/.config/ai_plugins/<TOKEN>.json`.
-
-```python
-_API_KEY = ""
-
-def setup(config: dict) -> bool:
-    global _API_KEY
-    _API_KEY = config.get("api_key", "")
-    if not _API_KEY:
-        print("[My Plugin] No api_key in config — plugin disabled.")
-        return False
-    return True
-```
-
-Returning `False` disables the plugin silently.
-
-### `handle_command(command: str, args: str) -> bool`
-
-Intercepts slash commands from `PLUGIN_COMMANDS`. Return `True` if handled, `False` to fall back to `run()`.
-
-```python
-def handle_command(command: str, args: str) -> bool:
-    if command == "/groq":
-        if not args:
-            print("[Groq] Usage: /groq <question>")
-        else:
-            print(run(args, {}))
-        return True
-    return False
-```
-
-### `get_help() -> str`
-
-Return a multi-line string shown in `/plugin list`.
-
-```python
-def get_help() -> str:
-    return (
-        f"{PLUGIN_NAME} v{PLUGIN_VERSION}: {PLUGIN_DESCRIPTION}\n"
-        f"  Triggers : {', '.join(PLUGIN_TRIGGERS)}\n"
-        f"  Commands : {', '.join(PLUGIN_COMMANDS)}"
-    )
-```
+| Function | Signature | Purpose |
+|---|---|---|
+| `setup` | `(config: dict) -> bool` | Called at load — return `False` to disable plugin (e.g. missing API key) |
+| `handle_command` | `(command: str, args: str) -> bool` | Handle slash commands registered in `PLUGIN_COMMANDS` |
+| `get_panel_content` | `() -> str` | GUI sidebar panel content (Markdown supported) |
+| `get_toolbar_actions` | `() -> list[dict]` | GUI toolbar buttons |
+| `on_startup` | `(context: dict)` | Post-load lifecycle event (HOOK type mainly, but all types support it) |
+| `on_shutdown` | `(context: dict)` | Clean shutdown event |
+| `on_mode_change` | `(old: str, new: str)` | Mode switch event |
+| `on_file_write` | `(path: str, content: str)` | File write event (Coder mode) |
+| `on_message_pre` | `(prompt: str) -> str` | Pre-routing prompt transformer |
+| `on_message_post` | `(prompt: str, response: str)` | Post-response observer |
 
 ---
 
 ## 11. Config Files — Storing API Keys
 
-Never hardcode credentials in your plugin. Store them in a JSON file:
+Store credentials in `~/.config/ai_plugins/YOUR_TOKEN.json` (replace `YOUR_TOKEN` with your `PLUGIN_ROUTE_TOKEN`, lowercased):
 
-**Location:** `~/.config/ai_plugins/<PLUGIN_ROUTE_TOKEN>.json`
-
-**Example** for `PLUGIN_ROUTE_TOKEN = "GROQ"`:
-
-`~/.config/ai_plugins/GROQ.json`:
 ```json
 {
-    "api_key": "gsk_yourkeyhere",
-    "base_url": "https://api.groq.com/openai/v1",
+    "api_key": "sk-your-key-here",
     "default_model": "llama3-8b-8192",
-    "temperature": 0.7
+    "region": "us-east-1"
 }
 ```
 
-The `config` dict is loaded automatically and passed to `setup()`. You do not need to open the file yourself.
+Electra loads this automatically and passes it to your `setup(config)` function. **Never hardcode credentials in the plugin file itself.**
 
 ---
 
 ## 12. Dependency Declaration — PLUGIN_REQUIRES
 
-Declare any non-standard packages your plugin needs. The loader checks them at load time and warns the user if they're missing — without crashing the load.
+Declare pip packages your plugin needs:
 
 ```python
-PLUGIN_REQUIRES = ["feedparser>=6.0", "beautifulsoup4"]
+PLUGIN_REQUIRES = ["feedparser>=6.0", "beautifulsoup4", "pillow"]
 ```
 
-The loader strips version specifiers to check import availability and prints a clear install hint:
+Electra checks these at load time. If a package is missing, a warning is shown and the plugin is disabled. Users can install them with:
 
-```
-[Plugins] ⚠  RSS Reader: missing deps ['feedparser>=6.0'] — install with:
-              pip install feedparser>=6.0
-```
-
-Always install in the plugin `setup()` or document the requirement:
-
-```python
-PLUGIN_REQUIRES = ["feedparser"]
-
-def setup(config: dict) -> bool:
-    try:
-        import feedparser  # noqa
-    except ImportError:
-        print("[RSS] Install feedparser:  pip3 install feedparser")
-        return False
-    return True
+```bash
+pip install feedparser beautifulsoup4 pillow
 ```
 
-**Always available (no declaration needed):**  
-Full Python 3 standard library · `requests` · `json` · `os` · `re` · `subprocess` · `threading` · `datetime` · `uuid`
+The following packages are **always available** (bundled): `requests`, `json`, `os`, `re`, `datetime`, `threading`.
 
 ---
 
 ## 13. GUI Integration — Sidebar Panels & Toolbar Actions
 
-When the user runs Electra in GUI mode (`/gui` or `--gui`), plugins can add a **sidebar panel** and **header bar buttons**.
-
-### Sidebar panel
-
-Call `context["notify_panel"]()` from any hook or `run()` function:
+Register a live sidebar panel that updates automatically:
 
 ```python
 def on_startup(context: dict):
     if context.get("gui_active"):
         context["notify_panel"](
-            token        = PLUGIN_ROUTE_TOKEN,
-            label        = "Weather",        # tab label (≤14 chars)
-            content      = get_panel_text,   # callable() -> str, or a plain str
-            refresh_s    = 300,              # auto-refresh every 5 minutes (0 = manual)
+            token      = PLUGIN_ROUTE_TOKEN,
+            label      = "My Panel",
+            content    = get_panel_content,   # callable, called on each refresh
+            refresh_s  = 30,                  # refresh every 30 seconds
         )
 
-def get_panel_text() -> str:
-    # Called every time the panel refreshes
-    return "🌤 London: 18°C  |  Partly cloudy"
+def get_panel_content() -> str:
+    return "**Status:** OK\nLast check: just now"
 ```
 
-### Header bar toolbar buttons
-
-Pass a `toolbar_actions` list to `notify_panel`:
+Register toolbar buttons:
 
 ```python
-def on_startup(context: dict):
-    if context.get("gui_active"):
-        context["notify_panel"](
-            token           = PLUGIN_ROUTE_TOKEN,
-            label           = "Weather",
-            content         = get_panel_text,
-            refresh_s       = 300,
-            toolbar_actions = [
-                {"label": "Weather Now", "icon": "weather-clear-symbolic", "command": "/weather now"},
-                {"label": "Forecast",    "icon": "x-office-calendar-symbolic", "command": "/weather forecast"},
-            ]
-        )
-```
+def get_toolbar_actions() -> list:
+    return [
+        {"label": "Refresh", "icon": "view-refresh", "callback": _on_refresh},
+        {"label": "Settings", "icon": "preferences-system", "callback": _on_settings},
+    ]
 
-### `get_gui_panel()` — declarative alternative
-
-```python
-def get_gui_panel() -> dict:
-    return {
-        "label":      "My Panel",
-        "content_fn": lambda: f"Status: {_get_live_status()}",
-        "refresh_s":  60,
-    }
+def _on_refresh():
+    pass  # called when user clicks the Refresh button
 ```
 
 ---
 
 ## 14. Inter-Plugin Communication
 
-Plugins can call each other via `context["plugins"]` — a read-only dict of `{TOKEN: module}` for all currently loaded plugins.
+Plugins can call each other via `context["plugins"]`:
 
 ```python
 def run(prompt: str, context: dict) -> str:
     plugins = context.get("plugins", {})
-    groq = plugins.get("GROQ")
-    if groq and hasattr(groq, "run"):
-        return groq.run(prompt, context)
-    return "[My Plugin] Groq plugin not loaded."
+    crypto  = plugins.get("CRYPTO")
+    if crypto:
+        price = crypto.run("btc price", context)
+        return f"From Crypto plugin: {price}"
+    return "Crypto plugin not loaded."
 ```
 
 ---
 
 ## 15. How Plugins Connect to the Router
 
-### Strategy 1 — Fast local keyword scan
-
-The app scans every message against all loaded plugin `PLUGIN_TRIGGERS` lists instantly, with no AI call. AGENT plugin triggers are checked alongside built-in agent triggers.
-
-### Strategy 2 — AI router with full plugin context
-
-If the keyword scan is inconclusive, the router AI is called. The app dynamically appends all loaded plugins to the router's system prompt in two sections:
+The router AI sees your plugin like this (from its system prompt):
 
 ```
-# AGENT PLUGINS — first-class routing targets (treat like GOOGLE/DISCORD):
-MY_WEATHER             — Live weather and forecast. Triggers: "weather", "forecast"...
+# AGENT PLUGINS — treat these as first-class built-in agents:
+CRYPTO        — Live crypto prices from CoinGecko. Triggers: "crypto price", "btc price"...
 
-# COMMUNITY PLUGINS — route to these tokens when triggers match:
-GROQ                   — Route queries to Groq API. Triggers: "ask groq", "use groq"...
-CRYPTO                 — Live crypto prices from CoinGecko. Triggers: "btc price"...
+# COMMUNITY PLUGINS — route to these when triggers match:
+GROQ          — Route queries to Groq LLM API. Triggers: "ask groq", "use groq"...
+MY_COMMANDS   — Custom slash commands (no routing involvement)
 ```
 
-HOOK, COMMAND, and EVENT plugins are never shown to the router — they have no routing presence whatsoever.
+The router uses this context to decide whether to send a message to your plugin. AGENT plugins appear in the primary routing section alongside `GOOGLE`, `DISCORD`, `SPOTIFY`, etc.
 
 ---
 
 ## 16. Managing Plugins
 
-All plugin management happens via the `/plugin` command.
-
-| Command | Action |
-|---|---|
-| `/plugin` | Enter Plugin Coder Mode (AI writes/edits plugins) |
-| `/plugin list` | Show all loaded plugins with type, triggers, and commands |
-| `/plugin reload` | Hot-reload all plugins — no restart needed |
-| `/plugin test GROQ hello` | Directly call `GROQ.run("hello", ctx)` |
-| `/plugin install <file>` | Download a plugin from the community GitHub repo |
-| `/plugin publish <file>` | Submit a plugin to the community GitHub repo |
-| `/plugin sync` | Pull all new community plugins from GitHub |
-| `/plugin community` | Browse the community plugin hub |
-| `/plugin spec` | Open the full API spec |
-| `/plugin dir` | Open `~/.config/ai_plugins/` in Nemo |
-
-### Installing a plugin manually
-
-1. Place your `.py` file in `~/.config/ai_plugins/`
-2. If it needs credentials, create `~/.config/ai_plugins/<TOKEN>.json`
-3. Type `/plugin reload` — done
-
-### Disabling a plugin
-
-- Set `PLUGIN_ENABLED = False` in the plugin file, then `/plugin reload`
-- Rename the file to `pluginname.py.disabled`
-- Delete the file entirely
+```
+/plugin list                  # list all loaded plugins with status
+/plugin reload                # hot-reload all plugins (no restart needed)
+/plugin install <file.py>     # install a plugin from a local file
+/plugin sync                  # sync community plugin list
+/plugin community             # browse available community plugins
+/plugin publish <file.py>     # submit your plugin to the community
+/plugin test GROQ hello       # call a plugin's run() directly for testing
+/plugin dir                   # open ~/.config/ai_plugins in file manager
+```
 
 ---
 
 ## 17. Plugin Coder Mode — Let AI Write Your Plugin
 
-Plugin Coder Mode is a specialized AI coding environment where Electra knows the full v2.0 plugin API and writes complete, working plugins for you.
+The fastest way to create a plugin — describe what you want and Electra writes it:
 
-**Option A — Enter mode, then describe:**
 ```
-/plugin
-> write a HOOK plugin that logs every file the AI writes to a CSV file
+/plugin build a plugin that fetches live stock prices from Yahoo Finance
 ```
 
-**Option B — Inline:**
-```
-/plugin create a weather AGENT plugin using OpenWeatherMap API
-```
+The AI will:
+1. Ask clarifying questions (API key needed? slash commands? GUI panel?)
+2. Generate a complete, ready-to-use plugin file
+3. Install it to `~/.config/ai_plugins/`
+4. Hot-reload automatically
 
-**Option C — Edit an existing plugin:**
+You can also ask Electra to modify an existing plugin:
+
 ```
-/plugin edit my groq plugin and add on_mode_change support to pause it in Coder mode
+/plugin update GROQ to support streaming responses
 ```
 
 ---
 
 ## 18. Writing Plugins Manually
 
-```bash
-# 1. Create the file
-nano ~/.config/ai_plugins/my_plugin.py
+Minimum viable plugin (copy this skeleton):
 
-# 2. Create config if needed
-nano ~/.config/ai_plugins/MY_PLUGIN.json
+```python
+"""
+Plugin Name: My Plugin
+Description: What this plugin does
+Author: YourName
+Version: 1.0.0
+"""
 
-# 3. Load it
-# (inside Electra terminal)
-/plugin reload
+PLUGIN_NAME        = "My Plugin"
+PLUGIN_VERSION     = "1.0.0"
+PLUGIN_DESCRIPTION = "One-line description for the router"
+PLUGIN_AUTHOR      = "YourName"
+PLUGIN_ENABLED     = True
+PLUGIN_TYPE        = "ROUTER"
 
-# 4. Test it
-/plugin test MY_PLUGIN hello world
+PLUGIN_TRIGGERS    = ["my trigger phrase", "another trigger"]
+PLUGIN_ROUTE_TOKEN = "MY_PLUGIN"     # must be unique, ALL_CAPS
+PLUGIN_COMMANDS    = ["/myplugin"]
+PLUGIN_REQUIRES    = []
+
+def setup(config: dict) -> bool:
+    # Load credentials from config file — return False to disable
+    return True
+
+def run(prompt: str, context: dict) -> str:
+    # Main handler — return Markdown string or "" to fall through
+    return f"My plugin received: {prompt}"
+
+def handle_command(command: str, args: str) -> bool:
+    if command == "/myplugin":
+        print(run(args, {}))
+        return True
+    return False
 ```
+
+Save as `~/.config/ai_plugins/my_plugin.py` and run `/plugin reload`.
 
 ---
 
 ## 19. Complete Plugin Examples
 
-### Example 1 — Groq API Connector (ROUTER)
+### Example 1 — Groq LLM (ROUTER + slash command)
 
-`~/.config/ai_plugins/GROQ.json`:
-```json
-{
-    "api_key": "gsk_your_key_here",
-    "default_model": "llama3-8b-8192"
-}
-```
-
-`~/.config/ai_plugins/groq_connector.py`:
 ```python
 """
-Plugin Name: Groq Connector
-Triggers: ask groq | use groq | groq: | via groq
-Commands: /groq
+Plugin Name: Groq Agent
+Description: Route queries to Groq's ultra-fast LLM API.
+Requires: GROQ.json with {"api_key": "gsk_..."}
 """
 import requests
 
-PLUGIN_NAME        = "Groq Connector"
-PLUGIN_VERSION     = "1.1.0"
-PLUGIN_DESCRIPTION = "Route queries to Groq API (llama3, mixtral, gemma)"
+PLUGIN_NAME        = "Groq Agent"
+PLUGIN_VERSION     = "2.0.0"
+PLUGIN_DESCRIPTION = "Route queries to Groq LLM API (ultra-fast inference)"
 PLUGIN_AUTHOR      = "Community"
 PLUGIN_ENABLED     = True
 PLUGIN_TYPE        = "ROUTER"
