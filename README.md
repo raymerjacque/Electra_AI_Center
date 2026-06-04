@@ -7,6 +7,13 @@
 **Connect with us on Discord:** https://discord.gg/rYdcWz3Ch6  
 **A Project by MakuluLinux.com** | **HTML Guide:** https://makululinux.us/ai-terminal-guide.html
 
+## What is The AI Center ?
+---
+
+Electra AI Center is MakuluLinux's flagship all-in-one AI productivity suite, delivered as a terminal application with an optional desktop GUI. It is the terminal-native equivalent of a full AI workbench — combining the conversational power of a chat assistant, the autonomous file-editing muscle of an AI coding agent, the depth of a professional writing suite, the imagination of a full novel-generation pipeline, and the system-level authority of a natural-language command executor — all within a single application that ships as a compiled binary on every installation of MakuluLinux. And now available to Everyone else.
+
+Think of it as your personal AI engineer, writer, shell expert, home-automation controller, music controller, news reader, and research assistant — all accessible from one terminal window, or from your desktop via the lightweight Electra Bar widget or the full Electra
+
 ---
 
 ## Install
