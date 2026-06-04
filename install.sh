@@ -93,7 +93,8 @@ apt_install \
     ffmpeg \
     terminator \
     python3-tk \
-    inotify-tools
+    inotify-tools \
+    wget
 
 # ── GTK3 runtime: required by electra_bar.bin ─────────────────────────────────
 _info "Installing GTK3 runtime…"
@@ -150,34 +151,59 @@ pip_install \
 _ok "Python packages ready."
 
 # ══════════════════════════════════════════════════════════════════════════════
-_section "Step 3 — Downloading Electra AI Center binaries"
+_section "Step 3 — Ollama (local AI model runner)"
+# ══════════════════════════════════════════════════════════════════════════════
+
+if command -v ollama &>/dev/null; then
+    _ok "Ollama already installed — skipping."
+else
+    _info "Installing Ollama…"
+    # Ollama's own installer streams its progress to stderr — always visible
+    if curl -fsSL https://ollama.com/install.sh | sh; then
+        _ok "Ollama installed successfully."
+    else
+        _warn "Ollama installation failed — Electra still works with cloud models."
+        _warn "Install manually later:  curl -fsSL https://ollama.com/install.sh | sh"
+    fi
+fi
+
+# ══════════════════════════════════════════════════════════════════════════════
+_section "Step 4 — Downloading Electra AI Center binaries"
 # ══════════════════════════════════════════════════════════════════════════════
 
 _info "Creating install directory: ${INSTALL_DIR}"
 mkdir -p "${INSTALL_DIR}"
 
+# ── Download helper ───────────────────────────────────────────────────────────
+# curl --progress-bar is suppressed when stdout is not a TTY (e.g. piped bash).
+# wget -q --show-progress writes the bar to stderr which always shows.
+# We prefer wget; fall back to curl if wget is absent.
+download_bin() {
+    local label="$1" url="$2" dest="$3"
+    echo -e "\n${CYAN}${BOLD}  ▸ Downloading ${label}…${RESET}"
+    if command -v wget &>/dev/null; then
+        wget -q --show-progress --progress=bar:force:noscroll \
+             --tries=3 --waitretry=2 \
+             -O "${dest}" "${url}" \
+          || _err "Failed to download ${label}"
+    else
+        curl -fL --retry 3 --retry-delay 2 \
+             --progress-bar \
+             -o "${dest}" "${url}" \
+          || _err "Failed to download ${label}"
+    fi
+    local size; size=$(du -h "${dest}" | cut -f1)
+    _ok "${label} downloaded  (${size})"
+}
+
 # ── Download ai_terminal.bin ──────────────────────────────────────────────────
-_info "Downloading ai_terminal.bin…"
-if curl -fsSL --progress-bar \
-    "${GITHUB_BASE}/ai_terminal.bin" \
-    -o "${BIN_TERMINAL}"; then
-    _ok "ai_terminal.bin downloaded."
-else
-    _err "Failed to download ai_terminal.bin from ${GITHUB_BASE}. Check the URL and try again."
-fi
+download_bin "ai_terminal.bin" "${GITHUB_BASE}/ai_terminal.bin" "${BIN_TERMINAL}"
 
 # ── Download electra_bar.bin ──────────────────────────────────────────────────
-_info "Downloading electra_bar.bin…"
-if curl -fsSL --progress-bar \
-    "${GITHUB_BASE}/electra_bar.bin" \
-    -o "${BIN_BAR}"; then
-    _ok "electra_bar.bin downloaded."
-else
-    _err "Failed to download electra_bar.bin from ${GITHUB_BASE}. Check the URL and try again."
-fi
+download_bin "electra_bar.bin" "${GITHUB_BASE}/electra_bar.bin" "${BIN_BAR}"
 
 # ══════════════════════════════════════════════════════════════════════════════
-_section "Step 4 — Setting permissions"
+_section "Step 5 — Setting permissions"
 # ══════════════════════════════════════════════════════════════════════════════
 
 _info "Setting directory and binary permissions…"
@@ -187,7 +213,7 @@ chmod 755 "${BIN_BAR}"
 _ok "Permissions set."
 
 # ══════════════════════════════════════════════════════════════════════════════
-_section "Step 5 — Autostart (Electra Bar on login)"
+_section "Step 6 — Autostart (Electra Bar on login)"
 # ══════════════════════════════════════════════════════════════════════════════
 
 _info "Installing autostart entry for ${REAL_USER}…"
@@ -212,7 +238,7 @@ chown "${REAL_USER}:${REAL_USER}" "${AUTOSTART_FILE}"
 _ok "Autostart entry created: ${AUTOSTART_FILE}"
 
 # ══════════════════════════════════════════════════════════════════════════════
-_section "Step 6 — Launching Electra Bar"
+_section "Step 7 — Launching Electra Bar"
 # ══════════════════════════════════════════════════════════════════════════════
 
 _info "Starting Electra Bar for ${REAL_USER}…"
