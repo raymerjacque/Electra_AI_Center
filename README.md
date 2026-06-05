@@ -9,6 +9,28 @@
 
 ---
 
+## Install
+
+### 🖥️ Desktop / Laptop (with GUI)
+
+For Ubuntu/Debian desktops, laptops, and MakuluLinux. Installs both the terminal and the floating bar widget with full voice, GUI, and audio support:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install.sh | bash
+```
+
+### 🖧 Headless / Server (no GUI)
+
+For VPS, cloud servers, WSL, or any SSH-only machine with no desktop environment. Installs the terminal backend only — no GTK, no audio, no display required:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install-headless.sh | bash
+```
+
+That's it. Electra AI Center will be running on your system within minutes.
+
+---
+
 ## What is The AI Center?
 
 Electra AI Center is MakuluLinux's flagship all-in-one AI productivity suite, delivered as a terminal application with an optional desktop GUI. It is the terminal-native equivalent of a full AI workbench — combining the conversational power of a chat assistant, the autonomous file-editing muscle of an AI coding agent, the depth of a professional writing suite, the imagination of a full novel-generation pipeline, and the system-level authority of a natural-language command executor — all within a single application that ships as a compiled binary on every installation of MakuluLinux. And now available to everyone else.
@@ -68,28 +90,6 @@ Browse the full live-ranked list anytime inside Electra:
 /model
 ```
 
----
-
-
-
-### 🖥️ Desktop / Laptop (with GUI)
-
-For Ubuntu/Debian desktops, laptops, and MakuluLinux. Installs both the terminal and the floating bar widget with full voice, GUI, and audio support:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install.sh | bash
-```
-
-### 🖧 Headless / Server (no GUI)
-
-For VPS, cloud servers, WSL, or any SSH-only machine with no desktop environment. Installs the terminal backend only — no GTK, no audio, no display required:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install-headless.sh | bash
-```
-
-That's it. Electra AI Center will be running on your system within minutes.
-
 ### What Gets Installed
 
 | Component | Desktop | Headless |
@@ -103,9 +103,44 @@ That's it. Electra AI Center will be running on your system within minutes.
 
 ### System Requirements
 
-- Ubuntu / Debian-based Linux (Ubuntu 22.04+ recommended)
-- x86_64 architecture
-- Internet connection (AI backend is online)
+- **x86_64 architecture** — ARM/aarch64 not currently supported
+- **glibc 2.35 or newer** — the binary is compiled on Ubuntu 22.04 (glibc 2.35) and will not run on older glibc versions
+- **Runtime libraries** — `libportaudio2` and `ffmpeg` must be present on the system (the installer handles this)
+- Internet connection for AI features (offline mode available via Ollama)
+
+> **How the binary works:** Electra is compiled with Nuitka into a single self-contained binary. At launch it extracts to `/tmp/electra/` — your system needs write access to `/tmp` and glibc ≥ 2.35. The installer auto-detects your distro and package manager.
+
+### Supported Distributions
+
+| Family | Package Manager | Works | Confirmed Distros |
+|---|---|---|---|
+| **Debian / Ubuntu** | `apt-get` | ✅ Full support | Ubuntu 22.04+, Debian 12+, MakuluLinux, Linux Mint 21+, Pop!\_OS 22.04+, Zorin OS 16+, Elementary OS 7+, Kali Linux, MX Linux 23+, Raspberry Pi OS (Bookworm), Deepin, Neon, Devuan |
+| **Fedora / RHEL** | `dnf` / `dnf5` | ✅ Full support | Fedora 37+, RHEL 9+, CentOS Stream 9+, Rocky Linux 9+, AlmaLinux 9+, Amazon Linux 2023, Nobara, Ultramarine |
+| **Arch Linux** | `pacman` | ✅ Full support | Arch Linux, Manjaro, EndeavourOS, Garuda, ArcoLinux, Artix, CachyOS, XeroLinux |
+| **openSUSE** | `zypper` | ✅ Full support | openSUSE Tumbleweed, SLES 15 SP5+ |
+| **Void Linux** | `xbps-install` | ✅ Full support | Void Linux (glibc build — **not** the musl build) |
+| **Gentoo** | `emerge` | ⚠️ Best-effort | Gentoo, Funtoo, Calculate Linux — installer works; binary compatibility depends on your glibc version |
+| **Slackware** | `slackpkg` | ⚠️ Best-effort | Slackware 15+, Salix — installer attempts install; limited testing |
+| **Alpine Linux** | `apk` | ❌ Binary fails | Installer runs, but Alpine uses musl libc — the glibc binary will not execute |
+| **WSL2** | (distro's) | ✅ Terminal mode | Use a Ubuntu 22.04+ WSL2 image; GUI requires WSLg |
+
+### Not Supported
+
+| Distro / Setup | Status | Reason |
+|---|---|---|
+| **Ubuntu 20.04 / Debian 11** | ❌ Binary fails | glibc 2.31 — too old. Binary requires glibc ≥ 2.35 |
+| **RHEL 8 / Rocky 8 / AlmaLinux 8** | ❌ Binary fails | glibc 2.28 — too old |
+| **CentOS 7** | ❌ Binary fails | glibc 2.17 — far too old |
+| **openSUSE Leap 15.4 / 15.5** | ❌ Binary fails | glibc 2.31 — too old |
+| **Alpine Linux** | ❌ Binary fails | musl libc — fundamentally incompatible with glibc binaries |
+| **Void Linux (musl build)** | ❌ Binary fails | musl libc — use the glibc Void build instead |
+| **ARM / aarch64 / any non-x86\_64** | ❌ Not supported | Binary compiled for x86\_64 only |
+| **NixOS** | ❌ Binary fails | NixOS patched glibc paths break standard ELF binaries |
+| **WSL1** | ❌ Not supported | WSL1 lacks full Linux syscall support required by Nuitka onefile |
+| **macOS** | ❌ Not supported | Linux ELF binary — does not run on macOS |
+| **Windows (native)** | ❌ Not supported | Use WSL2 with Ubuntu 22.04+ |
+
+> **Not sure about your glibc version?** Run `ldd --version` in your terminal. If the first line shows `2.35` or higher, the binary will run.
 
 ### Starting the AI Terminal
 
