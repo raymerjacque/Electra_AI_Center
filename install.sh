@@ -590,6 +590,7 @@ _section "Step 6 — Downloading Electra AI Center binaries"
 # ═══════════════════════════════════════════════════════════════════════════════
 _info "Creating install directory: ${INSTALL_DIR}"
 mkdir -p "${INSTALL_DIR}"
+chmod 755 "${INSTALL_DIR}"
 
 # Always download the terminal binary
 download_bin "Electra AI Terminal" "${GITHUB_BASE}/ai_terminal.bin" "${BIN_TERMINAL}"
@@ -619,7 +620,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 _section "Step 7 — Setting permissions"
 # ═══════════════════════════════════════════════════════════════════════════════
-chmod 755 "${INSTALL_DIR}"
+chmod 755 "${INSTALL_DIR}"   # rwxr-xr-x — read+write+exec for root, read+exec for others
 chmod 755 "${BIN_TERMINAL}"
 $HAS_DISPLAY && [[ -f "${BIN_BAR}" ]] && chmod 755 "${BIN_BAR}"
 
