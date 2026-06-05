@@ -77,6 +77,7 @@ PKG_QUERY=""
 PKG_UPDATE=""
 PIP_PKG=""          # distro pip package name
 HAS_DISPLAY=false   # true when a graphical display is available
+DESKTOP_ENV=""      # detected DE: gnome | kde | cinnamon | xfce | mate | lxde | lxqt | budgie | unknown
 
 detect_distro() {
     if [[ -f /etc/os-release ]]; then
@@ -200,11 +201,57 @@ detect_distro() {
         HAS_DISPLAY=true
     fi
 
+    # Detect desktop environment
+    # Check env vars first (set by the running session), then fall back to
+    # probing installed session files — works even when run via sudo.
+    local de_raw="${XDG_CURRENT_DESKTOP:-${DESKTOP_SESSION:-${XDG_SESSION_DESKTOP:-}}}"
+    de_raw="${de_raw,,}"  # lowercase
+    case "$de_raw" in
+        *kde*|*plasma*)           DESKTOP_ENV="kde"      ;;
+        *cinnamon*)               DESKTOP_ENV="cinnamon" ;;
+        *gnome*)                  DESKTOP_ENV="gnome"    ;;
+        *xfce*)                   DESKTOP_ENV="xfce"     ;;
+        *mate*)                   DESKTOP_ENV="mate"     ;;
+        *lxqt*)                   DESKTOP_ENV="lxqt"     ;;
+        *lxde*)                   DESKTOP_ENV="lxde"     ;;
+        *budgie*)                 DESKTOP_ENV="budgie"   ;;
+        *pantheon*)               DESKTOP_ENV="pantheon" ;;
+        *)
+            # Fallback: probe for running DE processes
+            if   pgrep -x plasmashell   &>/dev/null; then DESKTOP_ENV="kde"
+            elif pgrep -x cinnamon      &>/dev/null; then DESKTOP_ENV="cinnamon"
+            elif pgrep -x gnome-shell   &>/dev/null; then DESKTOP_ENV="gnome"
+            elif pgrep -x xfce4-session &>/dev/null; then DESKTOP_ENV="xfce"
+            elif pgrep -x mate-session  &>/dev/null; then DESKTOP_ENV="mate"
+            elif pgrep -x lxqt-session  &>/dev/null; then DESKTOP_ENV="lxqt"
+            elif pgrep -x lxsession     &>/dev/null; then DESKTOP_ENV="lxde"
+            elif pgrep -x budgie-daemon &>/dev/null; then DESKTOP_ENV="budgie"
+            else
+                # Last resort: check installed session files
+                if   [[ -f /usr/share/xsessions/plasma.desktop ]]   || \
+                     [[ -f /usr/share/wayland-sessions/plasmawayland.desktop ]]; then
+                    DESKTOP_ENV="kde"
+                elif [[ -f /usr/share/xsessions/cinnamon.desktop ]]; then
+                    DESKTOP_ENV="cinnamon"
+                elif [[ -f /usr/share/xsessions/gnome.desktop ]];    then
+                    DESKTOP_ENV="gnome"
+                elif [[ -f /usr/share/xsessions/xfce.desktop ]];     then
+                    DESKTOP_ENV="xfce"
+                elif [[ -f /usr/share/xsessions/mate.desktop ]];     then
+                    DESKTOP_ENV="mate"
+                else
+                    DESKTOP_ENV="unknown"
+                fi
+            fi
+            ;;
+    esac
+
     local display_label="headless (no display)"
     $HAS_DISPLAY && display_label="desktop (display detected)"
 
     _ok "Distro  : ${DISTRO_ID:-unknown} → family: ${FAMILY}  (manager: ${PKG_MGR})"
     _ok "Mode    : ${display_label}"
+    $HAS_DISPLAY && _ok "Desktop : ${DESKTOP_ENV}"
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -554,6 +601,21 @@ else
     _skip "Electra Bar (headless install — bar requires a desktop display)"
 fi
 
+# Download the AI Center icon (used for desktop shortcut and app menu entry)
+AI_ICON_PATH="${INSTALL_DIR}/ai-icon.png"
+AI_ICON_URL="https://makululinux.us/ai-icon.png"
+_info "Downloading AI Center icon…"
+if command -v wget &>/dev/null; then
+    wget -q --tries=3 --waitretry=2 -O "${AI_ICON_PATH}" "${AI_ICON_URL}" 2>/dev/null \
+        && _ok "Icon saved: ${AI_ICON_PATH}" \
+        || { _warn "Icon download failed — using system fallback."; AI_ICON_PATH="utilities-terminal"; }
+else
+    curl -fsSL --retry 3 --retry-delay 2 -o "${AI_ICON_PATH}" "${AI_ICON_URL}" 2>/dev/null \
+        && _ok "Icon saved: ${AI_ICON_PATH}" \
+        || { _warn "Icon download failed — using system fallback."; AI_ICON_PATH="utilities-terminal"; }
+fi
+[[ -f "${AI_ICON_PATH}" ]] && chmod 644 "${AI_ICON_PATH}"
+
 # ═══════════════════════════════════════════════════════════════════════════════
 _section "Step 7 — Setting permissions"
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -588,16 +650,131 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-_section "Step 9 — Autostart (desktop only)"
+_section "Step 9 — Desktop shortcuts (AI Center launcher)"
 # ═══════════════════════════════════════════════════════════════════════════════
-if $HAS_DISPLAY && [[ -f "${BIN_BAR}" ]]; then
-    _info "Installing autostart entry for ${REAL_USER}…"
-    mkdir -p "${AUTOSTART_DIR}"
+# Creates:
+#   • /usr/share/applications/electra-ai-center.desktop  (app menu — all users)
+#   • ~/Desktop/electra-ai-center.desktop                (desktop icon)
+# Both open ai_terminal.bin in a terminal window.
+# The system menu entry is owned by root; the desktop copy by the real user.
 
+if $HAS_DISPLAY; then
+    _info "Creating AI Center desktop shortcuts…"
+
+    # Pick the best available terminal emulator for Terminal=true launch.
+    # We need one that supports -e <cmd> so the binary stays in the foreground.
+    pick_terminal() {
+        # Prefer DE-native terminal, then common fallbacks
+        case "$DESKTOP_ENV" in
+            kde)      for t in konsole xterm; do command -v "$t" &>/dev/null && echo "$t" && return; done ;;
+            cinnamon) for t in gnome-terminal xterm; do command -v "$t" &>/dev/null && echo "$t" && return; done ;;
+            xfce)     for t in xfce4-terminal xterm; do command -v "$t" &>/dev/null && echo "$t" && return; done ;;
+            mate)     for t in mate-terminal xterm; do command -v "$t" &>/dev/null && echo "$t" && return; done ;;
+            lxqt)     for t in qterminal xterm; do command -v "$t" &>/dev/null && echo "$t" && return; done ;;
+            lxde)     for t in lxterminal xterm; do command -v "$t" &>/dev/null && echo "$t" && return; done ;;
+        esac
+        # Generic fallback chain
+        for t in gnome-terminal konsole xfce4-terminal mate-terminal lxterminal qterminal \
+                 xterm uxterm rxvt-unicode rxvt tilix alacritty kitty terminator; do
+            command -v "$t" &>/dev/null && echo "$t" && return
+        done
+        echo "xterm"  # last resort — almost always present
+    }
+
+    TERM_BIN="$(pick_terminal)"
+
+    # Build the Exec line — each terminal has its own flag to run a command
+    case "$TERM_BIN" in
+        gnome-terminal) EXEC_LINE="gnome-terminal -- ${BIN_TERMINAL}" ;;
+        konsole)        EXEC_LINE="konsole -e ${BIN_TERMINAL}" ;;
+        xfce4-terminal) EXEC_LINE="xfce4-terminal -e ${BIN_TERMINAL}" ;;
+        mate-terminal)  EXEC_LINE="mate-terminal -e ${BIN_TERMINAL}" ;;
+        lxterminal)     EXEC_LINE="lxterminal -e ${BIN_TERMINAL}" ;;
+        qterminal)      EXEC_LINE="qterminal -e ${BIN_TERMINAL}" ;;
+        tilix)          EXEC_LINE="tilix -e ${BIN_TERMINAL}" ;;
+        alacritty)      EXEC_LINE="alacritty -e ${BIN_TERMINAL}" ;;
+        kitty)          EXEC_LINE="kitty ${BIN_TERMINAL}" ;;
+        terminator)     EXEC_LINE="terminator -e ${BIN_TERMINAL}" ;;
+        *)              EXEC_LINE="${TERM_BIN} -e ${BIN_TERMINAL}" ;;
+    esac
+
+    # Icon: use the downloaded Electra icon, fall back to system icon name
+    ICON="${AI_ICON_PATH}"
+
+    DESKTOP_CONTENT="[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AI Center
+GenericName=AI Terminal
+Comment=Electra AI Center — Chat, Code, Write, Command
+Exec=${EXEC_LINE}
+Icon=${ICON}
+Terminal=false
+StartupNotify=true
+Categories=Utility;Development;ArtificialIntelligence;
+Keywords=AI;Electra;Chat;Code;Terminal;MakuluLinux;"
+
+    # ── System-wide app menu entry (owned by root) ────────────────────────────
+    MENU_DIR="/usr/share/applications"
+    MENU_FILE="${MENU_DIR}/electra-ai-center.desktop"
+    mkdir -p "${MENU_DIR}"
+    echo "${DESKTOP_CONTENT}" > "${MENU_FILE}"
+    chmod 644 "${MENU_FILE}"
+    _ok "App menu entry: ${MENU_FILE}"
+
+    # ── Per-user desktop icon ─────────────────────────────────────────────────
+    DESKTOP_DIR="${REAL_HOME}/Desktop"
+    DESK_FILE="${DESKTOP_DIR}/electra-ai-center.desktop"
+    if [[ -d "${DESKTOP_DIR}" ]]; then
+        echo "${DESKTOP_CONTENT}" > "${DESK_FILE}"
+        chmod 755 "${DESK_FILE}"
+        chown "${REAL_USER}:${REAL_USER}" "${DESK_FILE}"
+        # Mark as trusted so Cinnamon/GNOME/XFCE don't show "untrusted" warning
+        sudo -u "${REAL_USER}" gio set "${DESK_FILE}" metadata::trusted true 2>/dev/null || true
+        # KDE marks trust differently
+        if [[ "$DESKTOP_ENV" == "kde" ]]; then
+            # KDE reads the X-KDE-Protocols field and checks executable bit
+            # chmod 755 already done above — nothing else needed for KDE trust
+            :
+        fi
+        _ok "Desktop icon  : ${DESK_FILE}  (terminal: ${TERM_BIN})"
+    else
+        _warn "~/Desktop not found — skipping desktop icon (menu entry still created)"
+    fi
+
+    # Refresh app menu cache if update-desktop-database is available
+    command -v update-desktop-database &>/dev/null && \
+        update-desktop-database "${MENU_DIR}" 2>/dev/null || true
+else
+    _skip "Desktop shortcuts (headless — no display)"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+_section "Step 10 — Autostart: Electra Bar"
+# ═══════════════════════════════════════════════════════════════════════════════
+# Strategy by DE:
+#   GNOME / Cinnamon / XFCE / MATE / Budgie / Pantheon / unknown:
+#     → ~/.config/autostart/electra-bar.desktop   (XDG standard — works everywhere)
+#   KDE Plasma:
+#     → ~/.config/autostart/electra-bar.desktop   (KDE also honours XDG autostart)
+#     → ~/.config/autostart-scripts/electra-bar.sh (legacy KDE4 path, belt-and-braces)
+#     → qdbus org.kde.kded5 autostart (runtime registration if session is live)
+#   LXDE / LXQt:
+#     → ~/.config/autostart/electra-bar.desktop   (XDG) + lxsession entry
+
+if $HAS_DISPLAY && [[ -f "${BIN_BAR}" ]]; then
+    _info "Installing Electra Bar autostart for ${REAL_USER} (DE: ${DESKTOP_ENV})…"
+
+    REAL_UID="$(id -u "${REAL_USER}")"
+
+    # ── XDG autostart entry — works on ALL DEs ────────────────────────────────
+    mkdir -p "${AUTOSTART_DIR}"
     cat > "${AUTOSTART_FILE}" << DESKTOP
 [Desktop Entry]
+Version=1.0
 Type=Application
 Name=Electra Bar
+GenericName=AI Input Bar
 Comment=Electra AI Center floating input bar
 Exec=${BIN_BAR}
 Icon=utilities-terminal
@@ -605,23 +782,58 @@ Terminal=false
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
-X-GNOME-Autostart-Delay=3
+X-GNOME-Autostart-Delay=5
+X-KDE-autostart-after=panel
+X-KDE-StartupNotify=false
+StartupNotify=false
 DESKTOP
-
     chown "${REAL_USER}:${REAL_USER}" "${AUTOSTART_FILE}"
-    _ok "Autostart entry created: ${AUTOSTART_FILE}"
+    _ok "XDG autostart  : ${AUTOSTART_FILE}"
+
+    # ── KDE-specific: belt-and-braces script autostart ────────────────────────
+    if [[ "$DESKTOP_ENV" == "kde" ]]; then
+        KDE_AUTOSTART_SCRIPTS="${REAL_HOME}/.config/autostart-scripts"
+        KDE_BAR_SCRIPT="${KDE_AUTOSTART_SCRIPTS}/electra-bar.sh"
+        mkdir -p "${KDE_AUTOSTART_SCRIPTS}"
+        cat > "${KDE_BAR_SCRIPT}" << 'KDESCRIPT'
+#!/bin/bash
+# Electra Bar — KDE autostart script
+sleep 5
+exec /usr/share/MakuluSetup/tools/electra_bar.bin
+KDESCRIPT
+        # Patch in the real bin path (heredoc above uses literal string for safety)
+        sed -i "s|/usr/share/MakuluSetup/tools/electra_bar.bin|${BIN_BAR}|g" "${KDE_BAR_SCRIPT}"
+        chmod +x "${KDE_BAR_SCRIPT}"
+        chown "${REAL_USER}:${REAL_USER}" "${KDE_BAR_SCRIPT}"
+        _ok "KDE script     : ${KDE_BAR_SCRIPT}"
+    fi
+
+    # ── LXDE: also register with lxsession if present ────────────────────────
+    if [[ "$DESKTOP_ENV" == "lxde" ]]; then
+        LXSESSION_AUTOSTART="${REAL_HOME}/.config/lxsession/LXDE/autostart"
+        mkdir -p "$(dirname "${LXSESSION_AUTOSTART}")"
+        if ! grep -q "electra_bar" "${LXSESSION_AUTOSTART}" 2>/dev/null; then
+            echo "@${BIN_BAR}" >> "${LXSESSION_AUTOSTART}"
+            chown "${REAL_USER}:${REAL_USER}" "${LXSESSION_AUTOSTART}"
+            _ok "LXDE autostart : ${LXSESSION_AUTOSTART}"
+        fi
+    fi
+
+    _ok "Electra Bar will start automatically on next login."
 else
-    _skip "Autostart (headless — no bar installed)"
+    _skip "Autostart (headless or bar not installed)"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-_section "Step 10 — Launching Electra Bar"
+_section "Step 11 — Launching Electra Bar now"
 # ═══════════════════════════════════════════════════════════════════════════════
 if $HAS_DISPLAY && [[ -f "${BIN_BAR}" ]]; then
     _info "Starting Electra Bar for ${REAL_USER}…"
+    REAL_UID="$(id -u "${REAL_USER}")"
     sudo -u "${REAL_USER}" \
         DISPLAY="${DISPLAY:-:0}" \
-        DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u "${REAL_USER}")/bus}" \
+        DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/${REAL_UID}/bus}" \
+        XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/${REAL_UID}}" \
         nohup "${BIN_BAR}" >/dev/null 2>&1 &
     _ok "Electra Bar launched."
 else
@@ -645,6 +857,9 @@ if $HAS_DISPLAY; then
     echo -e "  ${BOLD}Electra Bar:${RESET}"
     echo -e "  ${GREY}    Starts automatically on every login.${RESET}"
     echo -e "  ${GREY}    Or launch now:  ${BIN_BAR}${RESET}"
+    echo ""
+    echo -e "  ${BOLD}AI Center shortcut:${RESET}"
+    echo -e "  ${GREY}    App menu → 'AI Center'  or  double-click the desktop icon.${RESET}"
     echo ""
     echo -e "  ${BOLD}Modes:${RESET}"
     echo -e "  ${GREY}    /chat      AI conversation${RESET}"
