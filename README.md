@@ -9,27 +9,6 @@
 
 ---
 
-## Latest Patch — 2026-06-07 · Bug Fix Release
-
-Full codebase audit completed. **9 bugs patched** (2 Critical · 4 High · 3 Medium/Low).
-
-| # | Severity | File | Description |
-|---|---|---|---|
-| BUG-01 | 🔴 Critical | `ai_terminal.py` | Duplicate `_novel_api_call()` — second def silently shadowed the first |
-| BUG-02 | 🔴 Critical | `finance_bot.py` | `ChatWorker` used `verify=False` + `disable_warnings()` — SSL not enforced |
-| BUG-03 | 🟠 High | `finance_bot.py` | `ChatWorker` hardcoded `conversation_id="finance_gui_chat"` — all users shared one server memory slot |
-| BUG-04 | 🟠 High | `ai_terminal.py` | `/newchat` missing `global command_conversation_id` — command history never actually reset |
-| BUG-05 | 🟠 High | `ai_terminal.py` | `_novel_api_call` generated fresh UUID per call — no server-side novel memory ever accumulated |
-| BUG-06 | 🟠 High | `electra_bar_qt.py` | `_ensure_xcb_platform()` had no offscreen fallback — hard Qt crash on distros missing libxcb-cursor0 |
-| BUG-07 | 🟡 Medium | `heartbeat_agent.py` | Hardcoded `"agent_heartbeat"` conversation_id — all users shared one server memory slot |
-| BUG-08 | 🟡 Medium | `ai_terminal.py` | `_quick_classify()` TASK verb list too broad — common chat questions routed to coder mode |
-| BUG-09 | 🟢 Low | `finance_bot.py` | `SMART_MODEL` hardcoded with no fallback — silent empty responses when model unavailable |
-
-**To apply:** download [`patches/bugfix_2026_06_07.py`](patches/bugfix_2026_06_07.py), run it from your source directory, recompile.  
-**Full details:** [`patches/BUG_REPORT_2026_06_07.md`](patches/BUG_REPORT_2026_06_07.md)
-
----
-
 ## Install
 
 ### 🖥️ Desktop / Laptop (with GUI)
