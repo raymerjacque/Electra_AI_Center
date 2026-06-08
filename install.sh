@@ -56,6 +56,18 @@ REAL_USER="${SUDO_USER:-${DOAS_USER:-$USER}}"
 REAL_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)" || REAL_HOME="$HOME"
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  PRE-INSTALL CLEANUP — remove stale plugin cache
+# ═══════════════════════════════════════════════════════════════════════════════
+AI_PLUGINS_DIR="${REAL_HOME}/.config/ai_plugins"
+if [[ -d "${AI_PLUGINS_DIR}" ]]; then
+    _info "Removing stale plugin cache: ${AI_PLUGINS_DIR}"
+    rm -rf "${AI_PLUGINS_DIR}"
+    _ok "Removed ${AI_PLUGINS_DIR}"
+else
+    _skip "Plugin cache not found — nothing to remove (${AI_PLUGINS_DIR})"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  PATHS & URLS
 # ═══════════════════════════════════════════════════════════════════════════════
 INSTALL_DIR="/usr/share/MakuluSetup/tools"
@@ -590,7 +602,6 @@ _section "Step 6 — Downloading Electra AI Center binaries"
 # ═══════════════════════════════════════════════════════════════════════════════
 _info "Creating install directory: ${INSTALL_DIR}"
 mkdir -p "${INSTALL_DIR}"
-chmod 755 "${INSTALL_DIR}"
 
 # Always download the terminal binary
 download_bin "Electra AI Terminal" "${GITHUB_BASE}/ai_terminal.bin" "${BIN_TERMINAL}"
@@ -620,7 +631,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 _section "Step 7 — Setting permissions"
 # ═══════════════════════════════════════════════════════════════════════════════
-chmod 755 "${INSTALL_DIR}"   # rwxr-xr-x — read+write+exec for root, read+exec for others
+chmod 755 "${INSTALL_DIR}"
 chmod 755 "${BIN_TERMINAL}"
 $HAS_DISPLAY && [[ -f "${BIN_BAR}" ]] && chmod 755 "${BIN_BAR}"
 
