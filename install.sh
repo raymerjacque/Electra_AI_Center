@@ -695,19 +695,52 @@ if $HAS_DISPLAY; then
 
     TERM_BIN="$(pick_terminal)"
 
-    # Build the Exec line — each terminal has its own flag to run a command
+    # Build the Exec lines — each terminal has its own flag to run a command
     case "$TERM_BIN" in
-        gnome-terminal) EXEC_LINE="gnome-terminal -- ${BIN_TERMINAL}" ;;
-        konsole)        EXEC_LINE="konsole -e ${BIN_TERMINAL}" ;;
-        xfce4-terminal) EXEC_LINE="xfce4-terminal -e ${BIN_TERMINAL}" ;;
-        mate-terminal)  EXEC_LINE="mate-terminal -e ${BIN_TERMINAL}" ;;
-        lxterminal)     EXEC_LINE="lxterminal -e ${BIN_TERMINAL}" ;;
-        qterminal)      EXEC_LINE="qterminal -e ${BIN_TERMINAL}" ;;
-        tilix)          EXEC_LINE="tilix -e ${BIN_TERMINAL}" ;;
-        alacritty)      EXEC_LINE="alacritty -e ${BIN_TERMINAL}" ;;
-        kitty)          EXEC_LINE="kitty ${BIN_TERMINAL}" ;;
-        terminator)     EXEC_LINE="terminator -e ${BIN_TERMINAL}" ;;
-        *)              EXEC_LINE="${TERM_BIN} -e ${BIN_TERMINAL}" ;;
+        gnome-terminal)
+            EXEC_LINE="gnome-terminal -- ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="gnome-terminal -- ${BIN_TERMINAL} --gui"
+            ;;
+        konsole)
+            EXEC_LINE="konsole -e ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="konsole -e ${BIN_TERMINAL} --gui"
+            ;;
+        xfce4-terminal)
+            EXEC_LINE="xfce4-terminal -e ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="xfce4-terminal -e ${BIN_TERMINAL} --gui"
+            ;;
+        mate-terminal)
+            EXEC_LINE="mate-terminal -e ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="mate-terminal -e ${BIN_TERMINAL} --gui"
+            ;;
+        lxterminal)
+            EXEC_LINE="lxterminal -e ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="lxterminal -e ${BIN_TERMINAL} --gui"
+            ;;
+        qterminal)
+            EXEC_LINE="qterminal -e ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="qterminal -e ${BIN_TERMINAL} --gui"
+            ;;
+        tilix)
+            EXEC_LINE="tilix -e ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="tilix -e ${BIN_TERMINAL} --gui"
+            ;;
+        alacritty)
+            EXEC_LINE="alacritty -e ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="alacritty -e ${BIN_TERMINAL} --gui"
+            ;;
+        kitty)
+            EXEC_LINE="kitty ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="kitty ${BIN_TERMINAL} --gui"
+            ;;
+        terminator)
+            EXEC_LINE="terminator -e ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="terminator -e ${BIN_TERMINAL} --gui"
+            ;;
+        *)
+            EXEC_LINE="${TERM_BIN} -e ${BIN_TERMINAL}"
+            EXEC_LINE_CODER="${TERM_BIN} -e ${BIN_TERMINAL} --gui"
+            ;;
     esac
 
     # Icon: use the downloaded Electra icon, fall back to system icon name
@@ -726,32 +759,55 @@ StartupNotify=true
 Categories=Utility;Development;ArtificialIntelligence;
 Keywords=AI;Electra;Chat;Code;Terminal;MakuluLinux;"
 
-    # ── System-wide app menu entry (owned by root) ────────────────────────────
+    CODER_DESKTOP_CONTENT="[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ai Coder
+GenericName=AI Terminal GUI
+Comment=Electra AI Coder — Graphical Interface
+Exec=${EXEC_LINE_CODER}
+Icon=${ICON}
+Terminal=false
+StartupNotify=true
+Categories=Utility;Development;ArtificialIntelligence;
+Keywords=AI;Electra;Chat;Code;Terminal;MakuluLinux;"
+
+    # ── System-wide app menu entries (owned by root) ──────────────────────────
     MENU_DIR="/usr/share/applications"
     MENU_FILE="${MENU_DIR}/electra-ai-center.desktop"
+    CODER_MENU_FILE="${MENU_DIR}/electra-ai-coder.desktop"
     mkdir -p "${MENU_DIR}"
     echo "${DESKTOP_CONTENT}" > "${MENU_FILE}"
     chmod 644 "${MENU_FILE}"
-    _ok "App menu entry: ${MENU_FILE}"
+    echo "${CODER_DESKTOP_CONTENT}" > "${CODER_MENU_FILE}"
+    chmod 644 "${CODER_MENU_FILE}"
+    _ok "App menu entries created: ${MENU_FILE} and ${CODER_MENU_FILE}"
 
-    # ── Per-user desktop icon ─────────────────────────────────────────────────
+    # ── Per-user desktop icons ────────────────────────────────────────────────
     DESKTOP_DIR="${REAL_HOME}/Desktop"
     DESK_FILE="${DESKTOP_DIR}/electra-ai-center.desktop"
+    CODER_DESK_FILE="${DESKTOP_DIR}/electra-ai-coder.desktop"
     if [[ -d "${DESKTOP_DIR}" ]]; then
         echo "${DESKTOP_CONTENT}" > "${DESK_FILE}"
         chmod 755 "${DESK_FILE}"
         chown "${REAL_USER}:${REAL_USER}" "${DESK_FILE}"
+        
+        echo "${CODER_DESKTOP_CONTENT}" > "${CODER_DESK_FILE}"
+        chmod 755 "${CODER_DESK_FILE}"
+        chown "${REAL_USER}:${REAL_USER}" "${CODER_DESK_FILE}"
+        
         # Mark as trusted so Cinnamon/GNOME/XFCE don't show "untrusted" warning
         sudo -u "${REAL_USER}" gio set "${DESK_FILE}" metadata::trusted true 2>/dev/null || true
+        sudo -u "${REAL_USER}" gio set "${CODER_DESK_FILE}" metadata::trusted true 2>/dev/null || true
         # KDE marks trust differently
         if [[ "$DESKTOP_ENV" == "kde" ]]; then
             # KDE reads the X-KDE-Protocols field and checks executable bit
             # chmod 755 already done above — nothing else needed for KDE trust
             :
         fi
-        _ok "Desktop icon  : ${DESK_FILE}  (terminal: ${TERM_BIN})"
+        _ok "Desktop icons  : ${DESK_FILE} and ${CODER_DESK_FILE}  (terminal: ${TERM_BIN})"
     else
-        _warn "~/Desktop not found — skipping desktop icon (menu entry still created)"
+        _warn "~/Desktop not found — skipping desktop icon (menu entries still created)"
     fi
 
     # Refresh app menu cache if update-desktop-database is available
