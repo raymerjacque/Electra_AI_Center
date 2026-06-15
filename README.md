@@ -3,6 +3,7 @@
 [![Electra AI Center](https://makululinux.us/ai-os.png)](https://makululinux.us/ai-os.html)
 
 **Fully integrated into:** https://makululinux.us/ai-os.html
+**PUBLIC API Access:** https://makululinux.us/
 
 **Connect with us on Discord:** https://discord.gg/rYdcWz3Ch6  
 **A Project by MakuluLinux.com** | **HTML Guide:** https://makululinux.us/ai-terminal-guide.html
