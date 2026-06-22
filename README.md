@@ -15,7 +15,7 @@
 
 ### 🖥️ Desktop / Laptop (with GUI)
 
-For Ubuntu/Debian desktops, laptops, and MakuluLinux. Installs both the terminal and the floating bar widget with full voice, GUI, and audio support:
+For Ubuntu/Debian/Fedora/Arch desktops, laptops, and MakuluLinux. Installs both the terminal and the floating bar widget with full voice, GUI, and audio support:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/raymerjacque/Electra_AI_Center/main/install.sh | bash
@@ -35,17 +35,25 @@ That's it. Electra AI Center will be running on your system within minutes.
 
 ## What is The AI Center?
 
-Electra AI Center is MakuluLinux's flagship all-in-one AI productivity suite, delivered as a terminal application with an optional desktop GUI. It is the terminal-native equivalent of a full AI workbench — combining the conversational power of a chat assistant, the autonomous file-editing muscle of an AI coding agent, the depth of a professional writing suite, the imagination of a full novel-generation pipeline, and the system-level authority of a natural-language command executor — all within a single application that ships as a compiled binary on every installation of MakuluLinux. And now available to everyone else.
+Electra AI Center is MakuluLinux's flagship all-in-one AI productivity suite — a **Jarvis-style AI operating layer for Linux**. Delivered as a single compiled binary, it combines the conversational power of a chat assistant, the autonomous file-editing muscle of a full coding agent, the depth of a professional writing suite, the imagination of a novel-generation pipeline, and the system-level authority of a natural-language command executor — all in one application.
 
-Think of it as your personal AI engineer, writer, shell expert, home-automation controller, music controller, news reader, and research assistant — all accessible from one terminal window, or from your desktop via the lightweight Electra Bar widget or the full Electra GUI.
+Think of it as your personal AI engineer, writer, shell expert, home-automation controller, finance bot, music controller, news reader, and research assistant — all accessible from one terminal window, from your desktop via the lightweight Electra Bar widget (Super+E), or through the full Electra GUI IDE.
+
+**Unique capabilities no other tool has:**
+- 🧠 **Screen awareness** — reads any focused app's content via AT-SPI (no copy-paste needed)
+- 🔌 **D-Bus desktop control** — any app or script can send queries *to* Electra via the session bus
+- 💰 **Autonomous finance engine** — earns money while you sleep (affiliate, print-on-demand, freelance)
+- 💓 **Heartbeat background agent** — runs scheduled tasks 24/7 with Telegram notifications
+- 🐝 **Agent Swarm** — up to 6 parallel AI agents working on different files simultaneously
+- 📦 **Single binary** — everything compiled with Nuitka; no Python, no dependencies, just run it
 
 In a nutshell: an **all-in-one autonomous AI control center** specially designed for Linux.
 
 ---
 
-## AI Models — 90+ Available
+## AI Models — 80+ Available
 
-Electra connects to **90+ AI models** across multiple providers — all through a single backend, no individual API keys needed for most. Models are ranked live by speed every time you check.
+Electra connects to **80+ AI models** across 11 providers — all through a single backend, no individual API keys needed for most. Models are ranked live by speed every time you check.
 
 ### 🏆 Headline Models
 
@@ -56,63 +64,91 @@ Electra connects to **90+ AI models** across multiple providers — all through 
 | **DeepSeek R1-0528** `671B` | DeepSeek | Extended chain-of-thought reasoning |
 | **Kimi K2.6** `1T MoE` | Moonshot AI | 1M context, agents, long-form analysis |
 | **Step 3.7 Flash** `196B` | StepFun | Long-form writing, novel generation, research |
-| **Step 3.5 Flash** `196B` | StepFun | Coding, chat, fast general use |
+| **Step 3.5 Flash** `196B` | StepFun | Coding, chat, fast general use — primary backbone |
 | **Qwen3-Coder 480B** `MoE` | Alibaba | Elite code generation across all languages |
 | **Qwen3.5 397B** `MoE` | Alibaba | Frontier reasoning and coding |
-| **Qwen3.5 122B** | Alibaba | Balanced speed and quality |
-| **Qwen 3.7 Max** | Qwen Cloud | Extended reasoning, 1M context |
 | **Mistral Large 3** `675B` | Mistral | Enterprise reasoning, multilingual |
-| **Mistral Medium 3.5** `128B` | Mistral | Balanced quality and speed |
-| **Codestral** `22B` | Mistral | Specialist code model |
-| **Devstral** `24B` | Mistral | Agentic software engineering |
+| **Devstral 2** `123B` | Mistral | Agentic software engineering |
 | **GPT-OSS 120B** | OpenAI | OpenAI open-weight, tool use |
-| **GPT o4-mini** | OpenAI | Fast reasoning with thinking |
 | **Nemotron 3 Super 120B** | NVIDIA | Agentic reasoning, tool calling |
 | **Nemotron 3 Nano 30B** | NVIDIA | Fast chat, always-on |
 | **Gemma 4 31B** | Google | Efficient multimodal reasoning |
-| **Gemini 2.5 Flash Lite** | Google | Ultra-fast responses |
-| **GLM-5.1** `130B` | Zhipu AI | Multilingual, long context |
-| **MiniMax M2.7** | MiniMax | 1M context, agentic tasks |
-| **Llama 3.3 70B** | Meta | Open-weight, fast, reliable |
-| **Seed-OSS 36B** | ByteDance | Efficient general purpose |
+| **MiniMax M3** | MiniMax | 1M context, agentic tasks |
+| **MiniMax M2.7** | MiniMax | Long context, fast |
+| **GLM-4.7** | Zhipu AI (Cerebras) | Ultra-fast wafer-scale (~3000 tok/s) |
+| **Mistral Medium 3.5** | Mistral | Balanced quality and speed |
 
-> Most models are available across **multiple providers** (NVIDIA, SiliconFlow, ModelScope, OpenRouter) — Electra automatically picks the fastest live instance. Pro tier unlocks the full catalogue.
+> Models span **11 providers** — Electra automatically picks the fastest live instance via composite scoring (60% capability + 40% speed). Pro tier unlocks the full catalogue.
 
-### Free vs Pro Models
+### Provider Prefixes
 
-```
-Free tier  — fast models always available (Nemotron 30B, GPT-OSS 20B, Step 3.5, Gemma 4, etc.)
-Pro tier   — full catalogue unlocked including DeepSeek V4 Pro, Kimi K2.6, Qwen3-Coder 480B, 
-             Mistral Large, GPT-OSS 120B, Nemotron Super 120B, and all frontier models
-Token      — enter /unlock with your access token for instant Pro access
-```
+| Prefix | Provider | Notes |
+|---|---|---|
+| `step-` | StepFun | Primary backbone — most stable cross-run |
+| `qc-` | QwenCloud / DashScope | Web search + function calling |
+| `mis-` | Mistral Direct | 5 keys, 10,000 req/day budget |
+| `cb-` | Cerebras | Ultra-fast (~3000 tok/s), wafer-scale |
+| `llm7-` | LLM7 | Community free inference |
+| `ms-` | ModelScope | 1 RPS cap, manual selection only |
+| `opr-` | OpenRouter | Manual selection only (daily limits) |
+| `ol-` | Ollama Cloud | 20+ large models — Major+ tier |
+| `ds-` | DeepSeek Direct | Paid per-token — Major+ tier |
+| `bt-` | ByteDance Ark | Paid per-token — Major+ tier |
+| `sf-` | SiliconFlow | Manual selection only (excluded from auto-routing) |
+
+### Access Tiers
+
+| Tier | Daily Limit | Premium Providers | Agent Swarm |
+|---|---|---|---|
+| **Free** | 50 / day | Standard pool | ✗ |
+| **Private** | 500 / day | Standard pool | ✗ |
+| **Corporal** | 1,500 / day | Standard pool | ✗ |
+| **Sergeant** | 4,000 / day | Standard pool | ✗ |
+| **Major** — $40/mo | 10,000 / day | `ds-` `bt-` `ol-` unlocked + auto-prioritised | ✓ |
+| **Commander** — $100/mo | Unlimited ∞ | `ds-` `bt-` `ol-` unlocked + auto-prioritised | ✓ |
+
+- Free users see all available models; locked models are marked `🔒 [Major+]`
+- Major/Commander subscribers get paid providers **automatically prioritised** in Coder and Command mode routing — no manual switching needed
+- Upgrade at: https://patreon.com/c/makululinux/membership
+- Token holders: use `/unlock` to enter your token and immediately unlock access
 
 Browse the full live-ranked list anytime inside Electra:
 ```
 /model
 ```
 
-### What Gets Installed
+---
+
+## What Gets Installed
 
 | Component | Desktop | Headless |
 |---|---|---|
 | `ai_terminal.bin` | ✅ `/usr/share/MakuluSetup/tools/` | ✅ `/usr/share/MakuluSetup/tools/` |
-| `electra_bar.bin` | ✅ floating input bar | ❌ requires display |
+| `electra_bar.bin` | ✅ floating input bar (Super+E) | ❌ requires display |
 | Autostart on login | ✅ `~/.config/autostart/` | ❌ no desktop session |
 | `electra` symlink | ✅ `/usr/local/bin/electra` | ✅ `/usr/local/bin/electra` |
 | Voice input | ✅ faster-whisper + pyaudio | ❌ no microphone |
 | GUI mode (`/gui`) | ✅ GTK3 IDE interface | ❌ requires display |
+| AT-SPI daemon | ✅ screen awareness daemon | ❌ requires display |
+| D-Bus daemon | ✅ `org.makululinux.Electra` | ❌ requires session bus |
+| Nemo context actions | ✅ right-click AI actions | ❌ no file manager |
 
-### System Requirements
+---
+
+## System Requirements
 
 - **x86_64 architecture** — ARM/aarch64 not currently supported
-- **glibc 2.35 or newer** — the binary is compiled on Ubuntu 22.04 (glibc 2.35) and will not run on older glibc versions
-- **Runtime libraries** — `libportaudio2` and `ffmpeg` must be present on the system (the installer handles this)
-- Internet connection for AI features (offline mode available via Ollama)
+- **glibc 2.35 or newer** — compiled on Ubuntu 22.04 (glibc 2.35)
+- **Runtime libraries** — `libportaudio2` and `ffmpeg` must be present (the installer handles this)
+- Internet connection for AI features (offline mode available via local Ollama)
 
 > **How the binary works:** Electra is compiled with Nuitka into a single self-contained binary. At launch it extracts to `/tmp/electra/` — your system needs write access to `/tmp` and glibc ≥ 2.35. The installer auto-detects your distro and package manager.
 
-### Supported Distributions
+> **Not sure about your glibc version?** Run `ldd --version` in your terminal. If the first line shows `2.35` or higher, you're good.
+
+---
+
+## Supported Distributions
 
 | Family | Package Manager | Works | Confirmed Distros |
 |---|---|---|---|
@@ -123,7 +159,7 @@ Browse the full live-ranked list anytime inside Electra:
 | **Void Linux** | `xbps-install` | ✅ Full support | Void Linux (glibc build — **not** the musl build) |
 | **Gentoo** | `emerge` | ⚠️ Best-effort | Gentoo, Funtoo, Calculate Linux — installer works; binary compatibility depends on your glibc version |
 | **Slackware** | `slackpkg` | ⚠️ Best-effort | Slackware 15+, Salix — installer attempts install; limited testing |
-| **Alpine Linux** | `apk` | ❌ Binary fails | Installer runs, but Alpine uses musl libc — the glibc binary will not execute |
+| **Alpine Linux** | `apk` | ❌ Binary fails | Alpine uses musl libc — the glibc binary will not execute |
 | **WSL2** | (distro's) | ✅ Terminal mode | Use a Ubuntu 22.04+ WSL2 image; GUI requires WSLg |
 
 ### Not Supported
@@ -134,7 +170,7 @@ Browse the full live-ranked list anytime inside Electra:
 | **RHEL 8 / Rocky 8 / AlmaLinux 8** | ❌ Binary fails | glibc 2.28 — too old |
 | **CentOS 7** | ❌ Binary fails | glibc 2.17 — far too old |
 | **openSUSE Leap 15.4 / 15.5** | ❌ Binary fails | glibc 2.31 — too old |
-| **Alpine Linux** | ❌ Binary fails | musl libc — fundamentally incompatible with glibc binaries |
+| **Alpine Linux** | ❌ Binary fails | musl libc — fundamentally incompatible |
 | **Void Linux (musl build)** | ❌ Binary fails | musl libc — use the glibc Void build instead |
 | **ARM / aarch64 / any non-x86\_64** | ❌ Not supported | Binary compiled for x86\_64 only |
 | **NixOS** | ❌ Binary fails | NixOS patched glibc paths break standard ELF binaries |
@@ -142,9 +178,9 @@ Browse the full live-ranked list anytime inside Electra:
 | **macOS** | ❌ Not supported | Linux ELF binary — does not run on macOS |
 | **Windows (native)** | ❌ Not supported | Use WSL2 with Ubuntu 22.04+ |
 
-> **Not sure about your glibc version?** Run `ldd --version` in your terminal. If the first line shows `2.35` or higher, the binary will run.
+---
 
-### Starting the AI Terminal
+## Starting Electra
 
 ```bash
 # Desktop — after install:
@@ -157,13 +193,13 @@ electra
 electra --gui
 ```
 
-The **floating Electra Bar** (desktop only) starts automatically on every login — type anything into it and press Enter.
+The **floating Electra Bar** (desktop only) starts automatically on every login — press **Super+E** or type anything into it and press Enter.
 
 ---
 
 ## Modes
 
-Electra has five core operating modes. Type the command to switch at any time:
+Electra has seven core operating modes. Type the command to switch at any time:
 
 | Mode | Command | What it does |
 |---|---|---|
@@ -172,7 +208,8 @@ Electra has five core operating modes. Type the command to switch at any time:
 | **Writer** | `/writer` | Content generation — articles, blogs, essays, documents, emails |
 | **Novel** | `/novel` | Full long-form book pipeline — 25-chapter novels with scene-by-scene generation |
 | **Command** | `/command` | Natural-language Linux commands — no shell knowledge needed |
-| **GUI / IDE** | `/gui` | Full desktop IDE — file tree, editor, chat panel, terminal |
+| **GUI / IDE** | `/gui` | Full desktop IDE — file tree, editor, chat panel, activity log, git panel |
+| **Finance** | `/finance` | Autonomous income engine — affiliate, print-on-demand, freelance scanner |
 | **Voice** | mic button | Voice input via faster-whisper (desktop only) |
 
 The **routing agent** automatically detects intent — just type naturally and Electra picks the right mode. You don't need to switch manually.
@@ -192,11 +229,13 @@ The **routing agent** automatically detects intent — just type naturally and E
 ```
 ▶ /coder
 ▶ build me a FastAPI app with JWT auth and SQLite
-▶ /plan         ← structured architect → developer → reviewer workflow
-▶ /debug        ← AI analyses the last error output
+▶ /swarm         ← parallel agents work on multiple files at once (Major+)
+▶ /plan          ← structured architect → developer → reviewer workflow
+▶ /debug         ← AI analyses the last error output
+▶ /delegate fix the auth module | add tests for the API  ← parallel tasks
 ▶ /research async patterns in Python
 ```
-> In Coder mode, Electra reads your actual files, writes changes, runs commands, and iterates autonomously. Point it at a project with `/set /path/to/project`.
+> In Coder mode, Electra reads your actual files, writes changes, runs commands, and iterates autonomously. Point it at a project with `/set /path/to/project`. The AI sees your full file tree, open tabs, and live editor content.
 
 ### Writer Mode
 ```
@@ -231,7 +270,24 @@ electra --gui          # Launch directly in GUI mode
 # Or from inside terminal:
 /gui
 ```
-The GUI provides a VSCode-style interface: file tree on the left, editor in the centre, AI chat panel on the right, and a status bar at the bottom.
+The GUI provides a VS Code-style interface: file tree on the left, editor in the centre, AI chat panel on the right, and a status bar at the bottom. Features include:
+- **Streaming diff preview** — see AI file changes before they apply
+- **Agent Swarm panel** — live status of parallel agents (Major/Commander)
+- **Git panel** — stage, commit, and view diff from the sidebar
+- **Ghost text completions** — inline AI suggestions as you type (Tab to accept)
+- **Open VSX extensions** — install VS Code-compatible extensions, themes, and snippets
+- **Command palette** — Ctrl+Shift+P
+- **Quick file open** — Ctrl+P
+- **Inline edit** — select code, press Ctrl+K for AI to rewrite the selection
+- **Test generation** — Ctrl+Shift+G generates tests for the current file
+- **Voice input** — mic button in the chat panel
+
+### Finance Mode
+```
+▶ /finance
+▶ /hustle
+```
+> Finance mode activates the autonomous income engine: affiliate content generation, print-on-demand design & upload (Redbubble), and freelance job scanner. Results are tracked in a local SQLite ledger. Telegram notifications keep you updated while tasks run in the background.
 
 ---
 
@@ -241,16 +297,17 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 
 | Service | Command | What it does |
 |---|---|---|
+| **Codeberg** | `/codeberg` or `/cb` | Repos, PRs, issues, notifications on the privacy-first Git host |
+| **GitHub** | `/github` | Repo management, issue tracking, PR summaries |
 | **Weather** | `/weather London` | Live weather and forecasts for any city |
 | **Telegram Bridge** | `/telegram` | Control Electra via Telegram — send prompts from your phone |
-| **Discord Bot** | `/discord` | Discord channel integration |
+| **Discord Bot** | `/discord` | Discord channel integration with slash commands |
 | **Reddit** | `/reddit` | Browse, summarise, and interact with Reddit |
 | **Spotify** | `/spotify play chill beats` | Spotify playback control |
 | **RSS / News** | `/rss` | Subscribe to and summarise RSS feeds |
-| **GitHub** | `/github` | Repo management, issue tracking, PR summaries |
 | **Home Assistant** | `/ha` | Control your smart home devices |
-| **Finance / Hustle** | `/hustle` or `/finance` | Personal finance tracker and side hustle income manager |
-| **Blog Publisher** | `/blog` | AI-assisted blog writing and publishing via Beehiiv |
+| **Finance / Hustle** | `/hustle` or `/finance` | Autonomous income engine — affiliate, print-on-demand, freelance |
+| **Blog Publisher** | `/blog` | AI-assisted blog writing and auto-publishing via Dev.to / Beehiiv |
 | **Travel Planner** | `/travel plan a 5-night trip to Tokyo` | Full itinerary planning |
 | **Image Generation** | `/image a neon city at night` | AI image generation |
 | **QR Codes** | `/qr https://makululinux.us` | Generate QR codes instantly |
@@ -258,10 +315,45 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 | **SSH Manager** | `/ssh add home user@192.168.1.1` | Save and connect to SSH hosts |
 | **Docker** | `/docker ps` | Manage Docker containers naturally |
 | **System Monitor** | `/monitor cpu=85 ram=90` | Alerts when CPU/RAM cross thresholds |
-| **Package Manager** | `/pkg install neovim` | Natural language apt/snap/flatpak |
+| **Package Manager** | `/pkg install neovim` | Natural language apt/dnf/pacman/snap/flatpak |
 | **Reminders** | `/remind 30m take a break` | Set timed reminders |
 | **Clipboard AI** | `/clip explain` | Analyse whatever is in your clipboard |
 | **Heartbeat Agent** | `/heartbeat` | Background autonomous task runner daemon |
+| **AT-SPI Screen** | `/atspi` | Screen context daemon — AI reads any focused app |
+| **D-Bus Control** | `/dbus` | Two-way D-Bus desktop integration daemon |
+| **Agent Swarm** | `/swarm` | Parallel multi-agent multi-file editing (Major/Commander) |
+
+---
+
+## Desktop Integration (Linux-Exclusive Features)
+
+### AT-SPI Screen Awareness
+Electra can **read the content of any app you have focused** — a browser showing a stack trace, a PDF of API docs, a terminal with build output — and inject that context into every AI prompt automatically. No copy-paste needed.
+
+```
+# Control the AT-SPI daemon:
+/atspi status|start|stop|restart|install|uninstall|logs|on|off
+```
+
+### D-Bus Two-Way Desktop Control
+Any application, script, or keyboard shortcut on your desktop can send queries **to** Electra and receive responses via the standard Linux D-Bus session bus (`org.makululinux.Electra`).
+
+```bash
+# Send a query to Electra from any script:
+dbus-send --session --print-reply --dest=org.makululinux.Electra \
+  /org/makululinux/Electra org.makululinux.Electra.ExecuteIntent string:"what time is it"
+
+# Control the D-Bus daemon:
+/dbus status|start|stop|restart|install|uninstall|logs|ping
+```
+
+**Exposed D-Bus methods:** `Ping()`, `ExecuteIntent(query)`, `GetContext()`, `Notify(title, body)`, `TileWindows(layout)`
+
+### Nemo Right-Click Actions
+Right-click any file or folder in the Nemo file manager to access 25+ AI-powered context menu actions — summarise a file, explain code, generate tests, refactor, translate, and more. Installed automatically on first launch.
+
+### Electra Bar Widget
+A lightweight floating input bar (Super+E) gives you system-wide AI access from anywhere on your desktop without opening the full GUI.
 
 ---
 
@@ -277,29 +369,38 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 | `/refresh` | Re-check server and update model list |
 | `/set <path>` | Set working directory |
 | `/cd <path>` | Change directory |
+| `/mode` | Show or switch current mode |
+| `/offline` | Check offline/fallback mode status |
 
 ### AI & Models
 | Command | Description |
 |---|---|
 | `/model` | List all models with speed rankings, select one |
 | `/think` | Toggle extended reasoning/thinking mode |
-| `/providers` | Manage third-party API keys (OpenAI, Anthropic, Gemini, Kimi, Mistral) |
+| `/ghost [on\|off]` | Toggle inline AI ghost-text completions in GUI editor |
+| `/providers` | Manage third-party API keys (OpenAI, Anthropic, Gemini, Kimi, Mistral, Grok, Groq…) |
 | `/openai` | Add/update your OpenAI API key |
 | `/claude` | Add/update your Anthropic API key |
 | `/gemini` | Add/update your Google Gemini key |
 | `/kimi` | Add/update your Moonshot (Kimi) key |
 | `/mistral` | Add/update your Mistral key |
+| `/grok` | Add/update your xAI Grok key |
+| `/deepseek` | Add/update your DeepSeek Direct key |
+| `/cerebras` | Add/update your Cerebras key |
+| `/openrouter` | Add/update your OpenRouter key |
 
 ### Coding & Projects
 | Command | Description |
 |---|---|
 | `/plan` | Activate structured planning: Architect → Developer → Reviewer |
+| `/swarm [on\|off]` | Toggle Agent Swarm — parallel multi-agent multi-file editing (Major+) |
+| `/delegate <task1> \| <task2>` | Run parallel coder tasks simultaneously |
 | `/debug [error]` | AI diagnoses the last error or a pasted error |
 | `/research <topic>` | Deep research pass before starting code |
 | `/init [type] [name]` | Scaffold a new project (e.g. `/init flask myapi`) |
 | `/template list` | List available project templates |
 | `/index` | Re-index the current project for AI context |
-| `/lint [file]` | Run linter on current file or project |
+| `/lint [file]` | Run linter + AI fix suggestions |
 | `/sandbox` | Isolated test environment |
 | `/dry-run [on\|off]` | Preview commands before executing |
 | `/rollback [N\|all]` | Roll back the last N AI file changes |
@@ -307,6 +408,10 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 | `/autowrite [on\|off]` | Toggle auto file-write (no confirmation prompt) |
 | `/dp` | Toggle diff preview for autonomous operations |
 | `/docker` | Manage Docker containers |
+| `/pk` | View project knowledge base (`.electra_project.md`) |
+| `/pk init` | Create a project knowledge base in current workspace |
+| `/pk add <Section> \| <note>` | Quick-add a note to the project knowledge base |
+| `/vec-index` | Force full semantic vector index rebuild (ChromaDB) |
 
 ### Writing & Content
 | Command | Description |
@@ -316,7 +421,7 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 | `/translate <lang>` | Translate last output to any language |
 | `/style [file]` | Apply a style guide to writing |
 | `/format <rules>` | Reformat content by rules |
-| `/wordcount` | Show word count and progress toward target |
+| `/wordcount` or `/wc` | Show word count and progress toward target |
 | `/export <fmt> [file]` | Export to pdf / docx / md / txt |
 | `/import <file>` | Import a document for editing |
 | `/append <file>` | Append AI content to an existing file |
@@ -330,8 +435,12 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 | `/remember [note]` | Pin a note to persistent memory |
 | `/pin <file>` | Pin a file as always-in-context |
 | `/pins` | List pinned files |
+| `/unpin <file>` | Remove a pinned file |
 | `/compact` | Summarise and compress conversation history |
 | `/history export` | Export full conversation history |
+| `/context` | Show current context usage and token budget |
+| `/offline-memory` | View local offline memory (`.electra_memory.md`) |
+| `/clear-offline-memory` | Clear local offline memory |
 
 ### System & Utilities
 | Command | Description |
@@ -339,6 +448,8 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 | `/screenshot [q]` | Capture screen, optionally ask AI about it |
 | `/ocr <image>` | Extract and explain text from an image |
 | `/clip explain` | Analyse clipboard content with AI |
+| `/atspi [status\|on\|off\|install]` | Manage AT-SPI screen awareness daemon |
+| `/dbus [status\|ping\|install]` | Manage D-Bus desktop integration daemon |
 | `/encrypt` / `/decrypt` | Encrypt or decrypt text |
 | `/notify [on\|off]` | Toggle desktop notifications |
 | `/remind <t> <msg>` | Set a timed reminder (e.g. `/remind 1h check build`) |
@@ -350,6 +461,8 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 | `/open [file]` | Open a file in the default application |
 | `/repair` | AI self-repair — diagnose and fix broken Electra config |
 | `/repair forge <desc>` | AI generates a custom repair tool |
+| `/patterns` or `/gaps` | View error pattern log and stability report |
+| `/tasks` | View heartbeat background task list |
 
 ### Account & Access
 | Command | Description |
@@ -359,6 +472,17 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 | `/logout` | Log out |
 | `/unlock` | Enter an access token to unlock Pro models |
 | `/profile` | View your usage profile |
+
+### Git & Code Hosting
+| Command | Description |
+|---|---|
+| `/github` | GitHub agent — repos, issues, PRs, releases |
+| `/codeberg` or `/cb` | Codeberg agent — Forgejo/Gitea repos, issues, PRs |
+| `/cb connect` | Set up your Codeberg Personal Access Token |
+| `/cb repos` | List your repositories |
+| `/cb issues` | Open issues in active repo |
+| `/cb prs` | Open pull requests |
+| `/cb notifications` | Unread notifications |
 
 ### Plugins
 | Command | Description |
@@ -373,25 +497,9 @@ Electra ships with a suite of always-available integrations. No extra setup for 
 
 ---
 
-## Access Tiers
-
-| Tier | Models | Daily Limit |
-|---|---|---|
-| **Free** | Subset of fast models | Standard |
-| **Trial** | All models unlocked | Trial period |
-| **Token** | All models unlocked | Token limit |
-| **Pro (Patreon)** | All models unlocked | Tier limit |
-
-- Free users see available models; locked models are marked `🔒 [Pro — locked]`
-- Pro tiers: Private, Corporal, Sergeant, Major, Commander — each with increasing daily limits
-- Upgrade at: https://patreon.com/c/makululinux/membership
-- Token holders: use `/unlock` to enter your token and immediately unlock all models
-
----
-
 ## Plugin System Guide
 
-**Electra AI Terminal** is the AI assistant built into MakuluLinux. The core application is distributed as a compiled binary (`ai_terminal.bin`) to protect proprietary backend credentials. The **plugin system** is the open extension layer that allows the community to contribute new features, connect third-party APIs, and extend Electra's capabilities — all without access to the source code.
+**Electra AI Center** is distributed as a compiled binary to protect proprietary backend credentials. The **plugin system** is the open extension layer that allows the community to contribute new features, connect third-party APIs, and extend Electra's capabilities — all without access to the source code.
 
 This is the **v2.0** plugin API. It is fully backward-compatible — all v1.0 plugins continue to work with zero changes.
 
@@ -611,7 +719,7 @@ PLUGIN_TRIGGERS = ["openai:", "use gpt", "ask gpt", "gpt-4o"]
 
 ## 7. AGENT Plugin — First-Class Routing Target
 
-AGENT plugins are indistinguishable from built-in agents (Google, Discord, Spotify, etc.) from the router's perspective. They get the same routing priority, the same label in routing output, and no "community plugin" label. Use this type when your plugin is a full feature agent rather than a quick intercept.
+AGENT plugins are indistinguishable from built-in agents (Google, Discord, Spotify, etc.) from the router's perspective. They get the same routing priority and no "community plugin" label. Use this type when your plugin is a full feature agent rather than a quick intercept.
 
 ```python
 """
@@ -671,16 +779,6 @@ def handle_command(command: str, args: str) -> bool:
         print(run(args or "weather London", {}))
         return True
     return False
-```
-
-**What the router sees (after loading this plugin):**
-
-```
-# AGENT PLUGINS — first-class routing targets (treat like GOOGLE/DISCORD):
-MY_WEATHER             — Live weather and 7-day forecast. Triggers: "weather", "forecast"...
-
-# COMMUNITY PLUGINS — route to these tokens when triggers match:
-GROQ                   — Route queries to Groq API. Triggers: "ask groq", "use groq"...
 ```
 
 ---
@@ -1187,6 +1285,7 @@ CHAT  CODER  WRITER  COMMAND  LIVE  IMAGE  VIDEO  AUDIO  TRAVEL  NOVEL
 PLAN  PLUGIN  GOOGLE  HOME_ASSISTANT  RSS  GITHUB_AGENT  SPOTIFY
 DISCORD  REDDIT  FINANCE  TELEGRAM_SERVICE  AGENT_SERVICE  ISO_AGENT
 APP_AGENT  NVIDIA_AGENT  TROUBLESHOOT  ASK_COMMAND  ASK_CODER  WEATHER
+CODEBERG  SOURCE_CODE  BLOG  SWARM  DBUS  ATSPI  HEARTBEAT
 ```
 
 ---
@@ -1202,5 +1301,5 @@ APP_AGENT  NVIDIA_AGENT  TROUBLESHOOT  ASK_COMMAND  ASK_CODER  WEATHER
 ---
 
 *Electra AI Center — MakuluLinux*  
-*Plugin System v2.0*  
+*Plugin System v2.0 · Binary v2026.06.21-r5*  
 *© MakuluLinux.com — Community contributions welcome*
