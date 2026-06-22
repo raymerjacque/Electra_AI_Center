@@ -9,6 +9,7 @@
 
 **Connect with us on Discord:** https://discord.gg/rYdcWz3Ch6  
 **A Project by MakuluLinux.com** | **HTML Guide:** https://makululinux.us/ai-terminal-guide.html
+**Current Status and road-map:** https://makululinux.us/status.html
 
 ---
 
