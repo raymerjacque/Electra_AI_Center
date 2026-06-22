@@ -1,7 +1,7 @@
 # Electra AI Center
 
 [![Electra AI Center](https://makululinux.us/ai-os.png)](https://makululinux.us/ai-os.html)
-[!((https://makululinux.us/AI_Intelligence_Operating_System_Layer.png))]
+(https://makululinux.us/AI_Intelligence_Operating_System_Layer.png)
 
 **Fully integrated into:** https://makululinux.us/ai-os.html
 
