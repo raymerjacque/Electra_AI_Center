@@ -12,6 +12,8 @@
 
 **Current Status and road-map:** https://makululinux.us/status.html
 
+**Source Code:** https://makululinux.us/electra_agent.html
+
 ---
 
 ## Install
