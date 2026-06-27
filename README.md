@@ -538,10 +538,11 @@ This is the **v2.0** plugin API. It is fully backward-compatible — all v1.0 pl
 18. [Writing Plugins Manually](#18-writing-plugins-manually)
 19. [Complete Plugin Examples](#19-complete-plugin-examples)
 20. [Testing and Debugging](#20-testing-and-debugging)
-21. [Plugin Ideas and Use Cases](#21-plugin-ideas-and-use-cases)
-22. [Rules and Best Practices](#22-rules-and-best-practices)
-23. [Reserved Tokens](#23-reserved-tokens)
-24. [Contributing](#24-contributing)
+21. [Auto-Repair / Forge — AI Writes Plugins Automatically](#21-auto-repair--forge--ai-writes-plugins-automatically)
+22. [Auto-Repair / Forge — AI Writes Plugins Automatically](#21-auto-repair--forge--ai-writes-plugins-automatically)
+23. [Rules and Best Practices](#23-rules-and-best-practices)
+24. [Reserved Tokens](#24-reserved-tokens)
+25. [Contributing](#25-contributing)
 
 ---
 
@@ -644,18 +645,18 @@ Every plugin must declare these variables regardless of type:
 
 ## 5. The `context` Dict — Full Reference
 
-Every `run()` call receives a `context` dict. v2.0 adds 8 new keys (all backward-compatible):
+Every `run()` call receives a `context` dict. This is the **v2.1** full reference:
 
 ```python
 def run(prompt: str, context: dict) -> str:
-    # ── Original keys (v1.0) ───────────────────────────────────────────────
+    # ── v1.0 — Original keys ───────────────────────────────────────────────
     context["user_home"]        # str  — os.path.expanduser("~")
     context["plugin_dir"]       # str  — ~/.config/ai_plugins
     context["chat_history"]     # list — recent [{role, content}] dicts (read-only)
     context["conversation_id"]  # str  — current session conversation ID
     context["model"]            # str  — currently selected model ID
 
-    # ── New keys (v2.0) ────────────────────────────────────────────────────
+    # ── v2.0 — Enriched runtime ────────────────────────────────────────────
     context["current_mode"]     # str  — active phase: CHAT, CODER, WRITER, PLUGIN…
     context["cwd"]              # str  — current working directory
     context["gui_active"]       # bool — True when GUI (electra_gui) is running
@@ -663,7 +664,13 @@ def run(prompt: str, context: dict) -> str:
     context["session_id"]       # str  — unique UUID for this app launch
     context["print_fn"]         # callable(str) — print with Rich Markdown rendering
     context["notify_panel"]     # callable — register/update a GUI sidebar panel
-    context["plugins"]          # dict — {TOKEN: module} of all loaded plugins
+    context["plugins"]          # dict — {TOKEN: module} of all loaded plugins (read-only)
+
+    # ── v2.1 — Workspace & shared state ───────────────────────────────────
+    context["workspace"]        # str  — active coder workspace path (alias for cwd)
+    context["electra_state"]    # dict — content of ~/.config/ai_plugins/electra_state.json
+                                #        Returns {} if file not present. Read-only.
+                                #        Used for cross-plugin state and IMPRINT data.
 ```
 
 ### Using `print_fn` for progressive output
@@ -677,6 +684,38 @@ def run(prompt: str, context: dict) -> str:
     data = fetch_something()
     out(f"**Result:** {data}")
     return ""   # already printed — return empty to skip double output
+```
+
+### Using `electra_state` for shared / IMPRINT data
+
+`context["electra_state"]` is loaded from `~/.config/ai_plugins/electra_state.json` each call. Treat it as **read-only** — it is a shared state store that other system components (including IMPRINT Phase 6 when shipped) can write to. Plugins should use their own `PLUGIN_ROUTE_TOKEN.json` file for plugin-specific persistence.
+
+```python
+def run(prompt: str, context: dict) -> str:
+    state = context["electra_state"]
+    confidence = state.get("confidence", 1.0)   # IMPRINT confidence level (0.0–1.0)
+    phase      = state.get("current_phase", "CHAT")
+    if confidence < 0.5:
+        return "[MyPlugin] Electra is in low-confidence mode — skipping autonomous action."
+    # ... proceed normally
+```
+
+### Using `notify_panel` to push content to the GUI sidebar
+
+```python
+def on_startup(context: dict):
+    if context.get("gui_active"):
+        context["notify_panel"](
+            token     = PLUGIN_ROUTE_TOKEN,
+            label     = "My Panel",       # tab label, keep ≤ 12 chars
+            content   = _get_content,     # callable() -> str (Markdown or HTML)
+            refresh_s = 60,               # auto-refresh every 60 seconds
+        )
+
+def _get_content() -> str:
+    return "**Status:** Running
+
+Last updated: just now"
 ```
 
 ---
@@ -1251,7 +1290,31 @@ def handle_command(command: str, args: str) -> bool:
 
 ---
 
-## 21. Plugin Ideas and Use Cases
+## 21. Auto-Repair / Forge — AI Writes Plugins Automatically
+
+Electra includes a **Proactive Forge** daemon that activates when a built-in agent fails to handle a request. Instead of showing an error, Electra:
+
+1. Detects the capability gap (agent threw an exception or returned nothing useful)
+2. Reads `PLUGIN_SPEC.md` and the list of currently installed plugin tokens
+3. Calls an AI coding model with a structured prompt describing the failure and the full plugin API
+4. Writes the generated plugin to `~/.config/ai_plugins/autorepair_<token>.py`
+5. Hot-loads it — **immediately available, no restart needed**
+
+Forge-generated plugins are prefixed `autorepair_` so you can identify and review them. They follow all the same rules in this guide and can be edited, renamed, or published like any hand-written plugin.
+
+**This is also how `/plugin <description>` works** — you describe the plugin you want and Electra's Plugin Coder mode writes it for you using the same Forge infrastructure.
+
+```
+/plugin write a plugin that translates text using LibreTranslate
+/plugin create a plugin that queries my local PostgreSQL database
+/plugin make a plugin that shows Hacker News top stories
+```
+
+> **Note for plugin authors:** `PLUGIN_SPEC.md` in your plugin directory is **always overwritten at startup** with the current API version. Never edit it directly — use it as an authoritative reference, not a config file.
+
+---
+
+## 22. Plugin Ideas and Use Cases
 
 **AGENT Plugins** — OpenAI, Anthropic, Groq, Perplexity, Weather, News, Stock ticker  
 **HOOK Plugins** — Session logger, backup trigger, prompt guard, phone notifications  
@@ -1260,7 +1323,7 @@ def handle_command(command: str, args: str) -> bool:
 
 ---
 
-## 22. Rules and Best Practices
+## 23. Rules and Best Practices
 
 ```python
 # ✅ Read credentials from config
@@ -1287,7 +1350,7 @@ log = os.path.join(context["user_home"], ".electra", "my_plugin.log")
 
 ---
 
-## 23. Reserved Tokens
+## 24. Reserved Tokens
 
 Do not use these as your `PLUGIN_ROUTE_TOKEN`:
 
@@ -1297,11 +1360,12 @@ PLAN  PLUGIN  GOOGLE  HOME_ASSISTANT  RSS  GITHUB_AGENT  SPOTIFY
 DISCORD  REDDIT  FINANCE  TELEGRAM_SERVICE  AGENT_SERVICE  ISO_AGENT
 APP_AGENT  NVIDIA_AGENT  TROUBLESHOOT  ASK_COMMAND  ASK_CODER  WEATHER
 CODEBERG  SOURCE_CODE  BLOG  SWARM  DBUS  ATSPI  HEARTBEAT
+DOCKER  THEME
 ```
 
 ---
 
-## 24. Contributing
+## 25. Contributing
 
 1. Test your plugin locally and confirm it works
 2. Strip any personal API keys from the plugin file
@@ -1312,5 +1376,5 @@ CODEBERG  SOURCE_CODE  BLOG  SWARM  DBUS  ATSPI  HEARTBEAT
 ---
 
 *Electra AI Center — MakuluLinux*  
-*Plugin System v2.0 · Binary v2026.06.21-r5*  
+*Plugin System v2.1 · Binary v2026.06.23-r35*  
 *© MakuluLinux.com — Community contributions welcome*
