@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Paint & Notes</title>
+<style>
+  :root {
+    --panel-bg: rgba(14, 16, 20, 0.92);
+    --panel-border: rgba(0, 210, 255, 0.22);
+    --accent: #00d2ff;
+    --accent-dim: rgba(0, 210, 255, 0.35);
+    --text: rgba(225, 230, 235, 0.92);
+    --text-dim: rgba(170, 178, 185, 0.65);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: transparent;
+    overflow: hidden;
+    font-family: 'Ubuntu', 'Cantarell', 'Segoe UI', sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* ── The 10% buffer: plugin content never touches the screen edges ──────── */
+  .stage {
+    width: 100vw;
+    height: 100vh;
+    padding: 10vh 10vw;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    gap: 1.4vw;
+  }
+
+  /* ── Side toolbars ────────────────────────────────────────────────────── */
+  .toolbar {
+    width: 74px;
+    flex-shrink: 0;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+  }
+
+  .tb-label {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .tool-btn {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text);
+    font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, transform 0.08s;
+  }
+  .tool-btn:hover { background: rgba(0,210,255,0.12); transform: translateY(-1px); }
+  .tool-btn.active {
+    background: rgba(0,210,255,0.20);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .tool-btn:active { transform: translateY(0); }
+
+  .divider { width: 80%; height: 1px; background: rgba(255,255,255,0.08); margin: 2px 0; }
+
+  .size-preview-wrap {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #sizeDot { border-radius: 50%; background: var(--current-color, #fff); }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 56px; height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.15);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(0,210,255,0.6);
+  }
+
+  /* ── Color palette ────────────────────────────────────────────────────── */
+  .swatch {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+    flex-shrink: 0;
+  }
+  .swatch:hover { transform: scale(1.08); }
+  .swatch.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,210,255,0.25);
+  }
+  .swatch-custom {
+    display: flex; align-items: center; justify-content: center;
+    background: conic-gradient(from 0deg, red, yellow, lime, cyan, blue, magenta, red);
+    color: #fff; font-size: 16px; font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    position: relative;
+  }
+  .swatch-custom input[type="color"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%; border: none; padding: 0;
+  }
+
+  /* ── Canvas area ──────────────────────────────────────────────────────── */
+  .canvas-area {
+    flex: 1;
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    border: 2px solid rgba(0, 210, 255, 0.25);
+    background: rgba(247, 245, 240, 0.9); /* default 90% — overridden live by the opacity slider */
+  }
+  #drawCanvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    touch-action: none;
+    cursor: crosshair;
+  }
+  #notesLayer {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+
+  /* ── Sticky notes ─────────────────────────────────────────────────────── */
+  .note {
+    position: absolute;
+    width: 190px; height: 160px;
+    min-width: 120px; min-height: 100px;
+    max-width: 420px; max-height: 420px;
+    display: flex; flex-direction: column;
+    border-radius: 4px 4px 6px 6px;
+    box-shadow: 3px 6px 16px rgba(0,0,0,0.35);
+    pointer-events: auto;
+    resize: both;
+    overflow: hidden;
+  }
+  .note-head {
+    height: 20px;
+    flex-shrink: 0;
+    cursor: grab;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding: 0 4px;
+    background: rgba(0,0,0,0.06);
+  }
+  .note-head:active { cursor: grabbing; }
+  .note-del {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.15);
+    color: rgba(0,0,0,0.55);
+    font-size: 11px;
+    line-height: 16px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .note-del:hover { background: rgba(220,50,50,0.85); color: #fff; }
+  .note-body {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 14px;
+    line-height: 1.35;
+    color: rgba(30,30,20,0.85);
+    outline: none;
+    overflow-y: auto;
+    -webkit-user-select: text;
+    user-select: text;
+    font-family: 'Segoe UI', 'Ubuntu', sans-serif;
+  }
+  .note-body:empty::before {
+    content: "Type a note…";
+    color: rgba(30,30,20,0.35);
+  }
+
+  /* ── Confirm modal (for Clear) ───────────────────────────────────────── */
+  .modal-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999;
+  }
+  .modal-box {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    color: var(--text);
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box p { margin: 0 0 16px 0; font-size: 14px; }
+  .modal-btns { display: flex; gap: 10px; justify-content: center; }
+  .modal-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid var(--accent-dim);
+  }
+  .modal-btn.confirm { background: rgba(255,90,90,0.18); border-color: rgba(255,90,90,0.4); color: #ff9a9a; }
+  .modal-btn.cancel { background: rgba(0,210,255,0.12); color: var(--accent); }
+  .modal-btn:hover { filter: brightness(1.2); }
+
+  .hint {
+    position: absolute;
+    bottom: 8px; left: 12px;
+    font-size: 10px;
+    color: rgba(30,30,20,0.35);
+    pointer-events: none;
+  }
+
+  /* ── Background opacity slider (top-right of the canvas area) ───────────── */
+  .opacity-ctrl {
+    position: absolute;
+    top: 10px; right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(14, 16, 20, 0.55);
+    border: 1px solid rgba(0, 210, 255, 0.25);
+    border-radius: 20px;
+    padding: 5px 10px;
+    z-index: 500;
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .opacity-ctrl .icon { font-size: 12px; opacity: 0.8; }
+  .opacity-ctrl input[type="range"] {
+    -webkit-appearance: none;
+    width: 70px; height: 3px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.2);
+    outline: none;
+  }
+  .opacity-ctrl input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(0,210,255,0.7);
+  }
+  .opacity-ctrl .value {
+    font-size: 10px;
+    color: rgba(220,225,230,0.75);
+    width: 28px;
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- LEFT: tools & styles -->
+  <div class="toolbar" id="leftToolbar">
+    <div class="tb-label">Tools</div>
+    <div class="tool-btn active" data-tool="pencil" title="Pencil">✏️</div>
+    <div class="tool-btn" data-tool="crayon" title="Crayon">🖍️</div>
+    <div class="tool-btn" data-tool="brush" title="Brush">🖌️</div>
+    <div class="tool-btn" data-tool="eraser" title="Eraser">🧽</div>
+
+    <div class="divider"></div>
+    <div class="tb-label">Size</div>
+    <div class="size-preview-wrap"><div id="sizeDot"></div></div>
+    <input type="range" id="sizeSlider" min="2" max="46" value="3">
+
+    <div class="divider"></div>
+    <div class="tool-btn" id="undoBtn" title="Undo (Ctrl+Z)">↶</div>
+    <div class="tool-btn" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↷</div>
+
+    <div class="divider"></div>
+    <div class="tool-btn" id="noteBtn" title="Add sticky note">📝</div>
+    <div class="tool-btn" id="saveBtn" title="Save as PNG">💾</div>
+    <div class="tool-btn" id="clearBtn" title="Clear canvas">🗑️</div>
+  </div>
+
+  <!-- CENTER: drawing surface -->
+  <div class="canvas-area" id="canvasArea">
+    <canvas id="drawCanvas"></canvas>
+    <div id="notesLayer"></div>
+    <div class="hint">Draw, doodle, or drop a sticky note — everything is saved automatically</div>
+    <div class="opacity-ctrl">
+      <span class="icon">💧</span>
+      <input type="range" id="opacitySlider" min="10" max="100" value="90">
+      <span class="value" id="opacityValue">90%</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: colors -->
+  <div class="toolbar" id="rightToolbar">
+    <div class="tb-label">Colors</div>
+    <!-- swatches injected by JS -->
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Pure logic helpers (kept DOM-free so they're independently testable) ───────
+// ═══════════════════════════════════════════════════════════════════════════
+
+function createHistoryStack(maxLen) {
+  const undo = [];
+  const redo = [];
+  return {
+    push(snapshot) {
+      undo.push(snapshot);
+      if (undo.length > maxLen) undo.shift();
+      redo.length = 0;
+    },
+    undo(current) {
+      if (!undo.length) return null;
+      redo.push(current);
+      return undo.pop();
+    },
+    redo(current) {
+      if (!redo.length) return null;
+      undo.push(current);
+      return redo.pop();
+    },
+    canUndo: () => undo.length > 0,
+    canRedo: () => redo.length > 0,
+    _debug: () => ({ undoLen: undo.length, redoLen: redo.length }),
+  };
+}
+
+function makeDebouncer(delayMs, fn) {
+  let timer = null;
+  const debounced = (...args) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delayMs);
+  };
+  debounced.flushPending = () => !!timer;
+  return debounced;
+}
+
+function serializeState(strokes, notes, paperAlpha) {
+  return JSON.stringify({ v: 2, strokes, notes, paperAlpha: paperAlpha != null ? paperAlpha : 0.9 });
+}
+
+function deserializeState(json) {
+  try {
+    const data = JSON.parse(json);
+    if (!data || (data.v !== 1 && data.v !== 2)) return null;
+    return {
+      strokes: data.strokes || [],
+      notes: data.notes || [],
+      // v1 saves predate the opacity slider — default to 90% for them too.
+      paperAlpha: (data.v === 2 && typeof data.paperAlpha === "number") ? data.paperAlpha : 0.9,
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function randomNotePosition(areaWidth, areaHeight, noteWidth, noteHeight) {
+  const maxX = Math.max(0, areaWidth - noteWidth);
+  const maxY = Math.max(0, areaHeight - noteHeight);
+  return {
+    x: Math.round(Math.random() * maxX),
+    y: Math.round(Math.random() * maxY),
+  };
+}
+
+const NOTE_COLORS = ["#fff6a3", "#ffd6e8", "#c9f2c1", "#bfe3ff", "#ffe0b3", "#e0c9ff"];
+function randomNoteColor() {
+  return NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)];
+}
+
+if (typeof module !== "undefined") {
+  module.exports = {
+    createHistoryStack, makeDebouncer, serializeState, deserializeState,
+    randomNotePosition, randomNoteColor, NOTE_COLORS,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// App (DOM-dependent) — only runs in a real browser/WebView, not under Node
+// ═══════════════════════════════════════════════════════════════════════════
+if (typeof document !== "undefined") {
+
+const STORAGE_KEY = "electra_paint_v1";
+const PALETTE = [
+  "#2c3e50", "#e74c3c", "#e67e22", "#d4a373", "#f1c40f", "#a3d977",
+  "#2ecc71", "#1abc9c", "#3498db", "#9b59b6", "#e84393", "#ffffff",
+];
+
+const canvas = document.getElementById("drawCanvas");
+const ctx = canvas.getContext("2d");
+const canvasArea = document.getElementById("canvasArea");
+const notesLayer = document.getElementById("notesLayer");
+const rightToolbar = document.getElementById("rightToolbar");
+const sizeSlider = document.getElementById("sizeSlider");
+const sizeDot = document.getElementById("sizeDot");
+const opacitySlider = document.getElementById("opacitySlider");
+const opacityValue = document.getElementById("opacityValue");
+
+let strokes = [];
+let notes = [];
+let paperAlpha = 0.9;
+let currentTool = "pencil";
+let currentColor = PALETTE[0];
+const toolSizes = { pencil: 3, crayon: 12, brush: 22, eraser: 24 };
+
+const history = createHistoryStack(50);
+const scheduleSave = makeDebouncer(500, saveState);
+
+let drawing = false;
+let currentStroke = null;
+let lastPoint = null;
+let dpr = window.devicePixelRatio || 1;
+let logicalW = 0, logicalH = 0;
+let noteZCounter = 10;
+
+// ── Canvas sizing ────────────────────────────────────────────────────────
+function resizeCanvas() {
+  const rect = canvasArea.getBoundingClientRect();
+  logicalW = rect.width;
+  logicalH = rect.height;
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  canvas.style.width = rect.width + "px";
+  canvas.style.height = rect.height + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  redrawAll();
+}
+
+// ── Rendering ────────────────────────────────────────────────────────────
+function applyStrokeStyle(stroke) {
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.strokeStyle = stroke.color;
+  ctx.fillStyle = stroke.color;
+  if (stroke.tool === "eraser") {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.lineWidth = stroke.size;
+    ctx.shadowBlur = 0;
+  } else if (stroke.tool === "brush") {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.lineWidth = stroke.size;
+    ctx.shadowColor = stroke.color;
+    ctx.shadowBlur = stroke.size * 0.35;
+  } else if (stroke.tool === "crayon") {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.lineWidth = stroke.size * 0.55;
+    ctx.shadowBlur = 0;
+  } else { // pencil
+    ctx.globalCompositeOperation = "source-over";
+    ctx.lineWidth = stroke.size;
+    ctx.shadowBlur = 0;
+  }
+}
+
+function resetCtx() {
+  ctx.globalCompositeOperation = "source-over";
+  ctx.shadowBlur = 0;
+}
+
+function drawSegment(stroke, x0, y0, x1, y1) {
+  applyStrokeStyle(stroke);
+  if (stroke.tool === "crayon") {
+    // Cheap texture: a couple of jittered lower-opacity passes alongside
+    // the main stroke. Deterministic jitter isn't stored per-point (known
+    // simplification), so a redraw/undo may look slightly different from
+    // the live-drawn version — acceptable for a casual drawing tool.
+    const passes = 3;
+    for (let i = 0; i < passes; i++) {
+      const jx = (Math.random() - 0.5) * stroke.size * 0.3;
+      const jy = (Math.random() - 0.5) * stroke.size * 0.3;
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.moveTo(x0 + jx, y0 + jy);
+      ctx.lineTo(x1 + jx, y1 + jy);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+  }
+  resetCtx();
+}
+
+function drawDot(stroke, x, y) {
+  applyStrokeStyle(stroke);
+  ctx.beginPath();
+  ctx.arc(x, y, stroke.size / 2, 0, Math.PI * 2);
+  ctx.fill();
+  resetCtx();
+}
+
+function replayStroke(stroke) {
+  const pts = stroke.points;
+  if (!pts.length) return;
+  if (pts.length === 1) {
+    drawDot(stroke, pts[0].x, pts[0].y);
+    return;
+  }
+  for (let i = 1; i < pts.length; i++) {
+    drawSegment(stroke, pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+  }
+}
+
+function redrawAll() {
+  ctx.clearRect(0, 0, logicalW, logicalH);
+  for (const s of strokes) replayStroke(s);
+}
+
+// ── History / persistence ────────────────────────────────────────────────
+function pushHistorySnapshot() {
+  history.push(strokes.slice());
+}
+
+function doUndo() {
+  const prev = history.undo(strokes.slice());
+  if (prev === null) return;
+  strokes = prev;
+  redrawAll();
+  scheduleSave();
+}
+
+function doRedo() {
+  const next = history.redo(strokes.slice());
+  if (next === null) return;
+  strokes = next;
+  redrawAll();
+  scheduleSave();
+}
+
+function saveState() {
+  try {
+    const notesData = notes.map(n => ({
+      id: n.id, x: n.x, y: n.y, w: n.w, h: n.h, color: n.color, text: n.text,
+    }));
+    localStorage.setItem(STORAGE_KEY, serializeState(strokes, notesData, paperAlpha));
+  } catch (e) {
+    console.warn("[Paint] Could not save state:", e);
+  }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = deserializeState(raw);
+    if (!data) return;
+    strokes = data.strokes;
+    paperAlpha = data.paperAlpha;
+    applyPaperAlpha(paperAlpha);
+    for (const n of data.notes) createNote(n);
+  } catch (e) {
+    console.warn("[Paint] Could not load saved state:", e);
+  }
+}
+
+// ── Pointer drawing ──────────────────────────────────────────────────────
+function canvasPoint(e) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  pushHistorySnapshot();
+  const p = canvasPoint(e);
+  currentStroke = {
+    tool: currentTool,
+    color: currentTool === "eraser" ? "#000000" : currentColor,
+    size: toolSizes[currentTool],
+    points: [p],
+  };
+  strokes.push(currentStroke);
+  lastPoint = p;
+  drawing = true;
+});
+
+canvas.addEventListener("pointermove", (e) => {
+  if (!drawing || !currentStroke) return;
+  const p = canvasPoint(e);
+  currentStroke.points.push(p);
+  drawSegment(currentStroke, lastPoint.x, lastPoint.y, p.x, p.y);
+  lastPoint = p;
+});
+
+function endStroke() {
+  if (!drawing) return;
+  if (currentStroke && currentStroke.points.length === 1) {
+    drawDot(currentStroke, currentStroke.points[0].x, currentStroke.points[0].y);
+  }
+  drawing = false;
+  currentStroke = null;
+  lastPoint = null;
+  scheduleSave();
+}
+canvas.addEventListener("pointerup", endStroke);
+canvas.addEventListener("pointercancel", endStroke);
+canvas.addEventListener("pointerleave", () => { if (drawing) endStroke(); });
+
+// ── Tool / size / color selection ────────────────────────────────────────
+document.querySelectorAll(".tool-btn[data-tool]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tool-btn[data-tool]").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentTool = btn.dataset.tool;
+    sizeSlider.value = toolSizes[currentTool];
+    updateSizeDot();
+  });
+});
+
+function updateSizeDot() {
+  const size = toolSizes[currentTool];
+  const displaySize = Math.max(4, Math.min(34, size));
+  sizeDot.style.width = displaySize + "px";
+  sizeDot.style.height = displaySize + "px";
+  sizeDot.style.background = currentTool === "eraser" ? "#888" : currentColor;
+}
+
+sizeSlider.addEventListener("input", () => {
+  toolSizes[currentTool] = parseInt(sizeSlider.value, 10);
+  updateSizeDot();
+});
+
+function buildPalette() {
+  PALETTE.forEach((color, i) => {
+    const sw = document.createElement("div");
+    sw.className = "swatch" + (i === 0 ? " active" : "");
+    sw.style.background = color;
+    sw.title = color;
+    sw.addEventListener("click", () => selectColor(color, sw));
+    rightToolbar.appendChild(sw);
+  });
+
+  const custom = document.createElement("div");
+  custom.className = "swatch swatch-custom";
+  custom.textContent = "+";
+  const input = document.createElement("input");
+  input.type = "color";
+  input.addEventListener("input", () => selectColor(input.value, custom));
+  custom.appendChild(input);
+  rightToolbar.appendChild(custom);
+}
+
+function selectColor(color, swatchEl) {
+  currentColor = color;
+  document.querySelectorAll(".swatch").forEach(s => s.classList.remove("active"));
+  swatchEl.classList.add("active");
+  updateSizeDot();
+}
+
+// ── Undo / redo / clear / save buttons ───────────────────────────────────
+document.getElementById("undoBtn").addEventListener("click", doUndo);
+document.getElementById("redoBtn").addEventListener("click", doRedo);
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  showConfirm("Clear the whole canvas? Sticky notes are kept.", () => {
+    pushHistorySnapshot();
+    strokes = [];
+    redrawAll();
+    scheduleSave();
+  });
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  const link = document.createElement("a");
+  link.download = "electra-canvas.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+});
+
+function showConfirm(message, onConfirm) {
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="modal-box">
+      <p>${message}</p>
+      <div class="modal-btns">
+        <div class="modal-btn cancel">Cancel</div>
+        <div class="modal-btn confirm">Clear</div>
+      </div>
+    </div>`;
+  backdrop.querySelector(".cancel").addEventListener("click", () => backdrop.remove());
+  backdrop.querySelector(".confirm").addEventListener("click", () => {
+    backdrop.remove();
+    onConfirm();
+  });
+  canvasArea.appendChild(backdrop);
+}
+
+// ── Sticky notes ─────────────────────────────────────────────────────────
+function createNote(opts) {
+  const note = document.createElement("div");
+  note.className = "note";
+  const w = opts.w || 190, h = opts.h || 160;
+  note.style.width = w + "px";
+  note.style.height = h + "px";
+  note.style.left = (opts.x != null ? opts.x : 20) + "px";
+  note.style.top = (opts.y != null ? opts.y : 20) + "px";
+  note.style.background = opts.color || randomNoteColor();
+  note.style.zIndex = ++noteZCounter;
+
+  const head = document.createElement("div");
+  head.className = "note-head";
+  const del = document.createElement("div");
+  del.className = "note-del";
+  del.textContent = "✕";
+  head.appendChild(del);
+
+  const body = document.createElement("div");
+  body.className = "note-body";
+  body.contentEditable = "true";
+  body.textContent = opts.text || "";
+
+  note.appendChild(head);
+  note.appendChild(body);
+  notesLayer.appendChild(note);
+
+  const record = { id: opts.id || ("n" + Date.now() + Math.random().toString(36).slice(2)),
+                    el: note, get x() { return note.offsetLeft; }, get y() { return note.offsetTop; },
+                    get w() { return note.offsetWidth; }, get h() { return note.offsetHeight; },
+                    color: opts.color || note.style.background,
+                    get text() { return body.textContent; } };
+  notes.push(record);
+
+  del.addEventListener("pointerdown", (e) => e.stopPropagation());
+  del.addEventListener("click", () => {
+    notesLayer.removeChild(note);
+    notes = notes.filter(n => n !== record);
+    scheduleSave();
+  });
+
+  body.addEventListener("input", () => scheduleSave());
+  body.addEventListener("pointerdown", (e) => e.stopPropagation());
+
+  // Drag via the header strip.
+  let dragOffset = null;
+  head.addEventListener("pointerdown", (e) => {
+    note.style.zIndex = ++noteZCounter;
+    const areaRect = canvasArea.getBoundingClientRect();
+    dragOffset = { x: e.clientX - areaRect.left - note.offsetLeft,
+                   y: e.clientY - areaRect.top - note.offsetTop };
+    head.setPointerCapture(e.pointerId);
+  });
+  head.addEventListener("pointermove", (e) => {
+    if (!dragOffset) return;
+    const areaRect = canvasArea.getBoundingClientRect();
+    let nx = e.clientX - areaRect.left - dragOffset.x;
+    let ny = e.clientY - areaRect.top - dragOffset.y;
+    nx = Math.max(0, Math.min(areaRect.width - note.offsetWidth, nx));
+    ny = Math.max(0, Math.min(areaRect.height - note.offsetHeight, ny));
+    note.style.left = nx + "px";
+    note.style.top = ny + "px";
+  });
+  head.addEventListener("pointerup", () => { dragOffset = null; scheduleSave(); });
+  head.addEventListener("pointercancel", () => { dragOffset = null; });
+
+  // Native CSS resize handle (bottom-right) — schedule a save when it changes size.
+  const resizeObserver = new ResizeObserver(() => scheduleSave());
+  resizeObserver.observe(note);
+
+  return record;
+}
+
+document.getElementById("noteBtn").addEventListener("click", () => {
+  const areaRect = canvasArea.getBoundingClientRect();
+  const pos = randomNotePosition(areaRect.width, areaRect.height, 190, 160);
+  createNote({ x: pos.x, y: pos.y, color: randomNoteColor() });
+  scheduleSave();
+});
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); doUndo(); }
+  else if (e.ctrlKey && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) {
+    e.preventDefault(); doRedo();
+  }
+});
+
+// ── Background opacity slider ────────────────────────────────────────────
+function applyPaperAlpha(alpha) {
+  canvasArea.style.background = `rgba(247, 245, 240, ${alpha})`;
+  opacitySlider.value = Math.round(alpha * 100);
+  opacityValue.textContent = Math.round(alpha * 100) + "%";
+}
+
+opacitySlider.addEventListener("input", () => {
+  paperAlpha = parseInt(opacitySlider.value, 10) / 100;
+  applyPaperAlpha(paperAlpha);
+  scheduleSave();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────
+buildPalette();
+applyPaperAlpha(paperAlpha); // sets the default (90%) before loadState may override it
+loadState();
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+updateSizeDot();
+
+} // end DOM-dependent block
+</script>
+</body>
+</html>
