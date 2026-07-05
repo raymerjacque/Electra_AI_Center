@@ -1,6 +1,6 @@
 {
-  "name": "Chess",
-  "description": "Play chess against Electra AI — you are White",
+  "name": "Paint & Notes",
+  "description": "Draw, doodle, and leave sticky-note reminders on your canvas",
   "entry": "index.html",
   "version": "1.0"
 }
