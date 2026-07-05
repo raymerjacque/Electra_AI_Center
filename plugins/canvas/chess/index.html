@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Chess</title>
+<style>
+  :root {
+    --light-sq: #eef2f5;
+    --dark-sq:  #24515e;
+    --accent:   #00d2ff;
+    --accent-dim: rgba(0, 210, 255, 0.35);
+    --highlight-move: rgba(0, 210, 255, 0.55);
+    --highlight-capture: rgba(255, 90, 90, 0.55);
+    --highlight-select: rgba(255, 210, 60, 0.55);
+    --highlight-check: rgba(255, 40, 40, 0.65);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: #0a0c10;
+    overflow: hidden;
+    font-family: 'Ubuntu', 'Cantarell', 'Segoe UI', sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* ── The 10% buffer: plugin content never touches the screen edges ──────── */
+  .stage {
+    width: 100vw;
+    height: 100vh;
+    padding: 10vh 10vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2vh;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: min(80vw, 78vh);
+    color: rgba(225, 230, 235, 0.92);
+  }
+
+  .status {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    min-height: 1.4em;
+  }
+  .status.thinking { color: var(--accent); }
+  .status.check { color: #ff5a5a; }
+  .status.over { color: #ffd23c; }
+
+  .new-game-btn {
+    background: rgba(0, 210, 255, 0.12);
+    border: 1px solid var(--accent-dim);
+    border-radius: 8px;
+    color: rgba(0, 210, 255, 0.92);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  .new-game-btn:hover { background: rgba(0, 210, 255, 0.22); }
+
+  .board-wrap {
+    width: min(78vh, 80vw);
+    height: min(78vh, 80vw);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid rgba(0, 210, 255, 0.25);
+  }
+
+  .board {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+  }
+
+  .sq {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .sq.light { background: var(--light-sq); }
+  .sq.dark  { background: var(--dark-sq); }
+
+  .sq .piece {
+    font-size: min(6.2vh, 6.4vw);
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+    transition: transform 0.08s ease;
+  }
+  .sq.selected .piece { transform: scale(1.08); }
+
+  .sq .piece.white { color: #f5f7fa; }
+  .sq .piece.black { color: #12181d; }
+
+  .sq.selected::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: var(--highlight-select);
+    mix-blend-mode: normal;
+  }
+  .sq.in-check::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: var(--highlight-check);
+  }
+  .sq.legal-move .dot {
+    position: absolute;
+    width: 26%; height: 26%;
+    border-radius: 50%;
+    background: var(--highlight-move);
+  }
+  .sq.legal-capture::after {
+    content: "";
+    position: absolute; inset: 0;
+    border: 5px solid var(--highlight-capture);
+    box-sizing: border-box;
+  }
+
+  .coord {
+    position: absolute;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(0,0,0,0.25);
+    pointer-events: none;
+  }
+  .coord.file { bottom: 2px; right: 3px; }
+  .coord.rank { top: 2px; left: 3px; }
+  .sq.dark .coord { color: rgba(255,255,255,0.35); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="topbar">
+    <div class="status" id="status">Your move</div>
+    <button class="new-game-btn" id="newGameBtn">New Game</button>
+  </div>
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CHESS ENGINE — plain vanilla JS, no external libraries (offline, file://)
+// Known simplifications (v1): promotion always auto-queens, no fifty-move
+// or threefold-repetition draw detection.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const WHITE = "w", BLACK = "b";
+const PIECE_GLYPHS = {
+  P: "♙", N: "♘", B: "♗", R: "♖", Q: "♕", K: "♔",
+  p: "♟", n: "♞", b: "♝", r: "♜", q: "♛", k: "♚",
+};
+
+function initialBoard() {
+  return [
+    ["r","n","b","q","k","b","n","r"],
+    ["p","p","p","p","p","p","p","p"],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    ["P","P","P","P","P","P","P","P"],
+    ["R","N","B","Q","K","B","N","R"],
+  ];
+}
+
+function newGameState() {
+  return {
+    board: initialBoard(),
+    turn: WHITE,
+    castling: { wK: true, wQ: true, bK: true, bQ: true },
+    epTarget: null,       // {row, col} square a pawn can capture en passant onto
+    history: [],          // list of {from, to, san-ish string} for display/debug
+    conversationId: "chess_" + Date.now() + "_" + Math.random().toString(36).slice(2),
+  };
+}
+
+function pieceColor(p) {
+  if (!p) return null;
+  return p === p.toUpperCase() ? WHITE : BLACK;
+}
+function cloneBoard(b) { return b.map(row => row.slice()); }
+function inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+function squareName(r, c) { return "abcdefgh"[c] + (8 - r); }
+
+function findKing(board, color) {
+  const king = color === WHITE ? "K" : "k";
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (board[r][c] === king) return { row: r, col: c };
+  return null;
+}
+
+// Is `square` attacked by any piece of `byColor`? Used for check + castling safety.
+function isSquareAttacked(board, row, col, byColor) {
+  const dir = byColor === WHITE ? -1 : 1; // pawns of byColor attack "forward" from their side
+  // Pawn attacks
+  for (const dc of [-1, 1]) {
+    const r = row + dir, c = col + dc;
+    if (inBounds(r, c)) {
+      const p = board[r][c];
+      if (p && pieceColor(p) === byColor && p.toUpperCase() === "P") return true;
+    }
+  }
+  // Knight attacks
+  const knightDeltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+  for (const [dr, dc] of knightDeltas) {
+    const r = row + dr, c = col + dc;
+    if (inBounds(r, c)) {
+      const p = board[r][c];
+      if (p && pieceColor(p) === byColor && p.toUpperCase() === "N") return true;
+    }
+  }
+  // Sliding: bishop/rook/queen
+  const slideDirs = {
+    B: [[-1,-1],[-1,1],[1,-1],[1,1]],
+    R: [[-1,0],[1,0],[0,-1],[0,1]],
+  };
+  for (const [type, dirs] of Object.entries(slideDirs)) {
+    for (const [dr, dc] of dirs) {
+      let r = row + dr, c = col + dc;
+      while (inBounds(r, c)) {
+        const p = board[r][c];
+        if (p) {
+          const up = p.toUpperCase();
+          if (pieceColor(p) === byColor && (up === type || up === "Q")) return true;
+          break;
+        }
+        r += dr; c += dc;
+      }
+    }
+  }
+  // King adjacency
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const r = row + dr, c = col + dc;
+      if (inBounds(r, c)) {
+        const p = board[r][c];
+        if (p && pieceColor(p) === byColor && p.toUpperCase() === "K") return true;
+      }
+    }
+  return false;
+}
+
+function isInCheck(board, color) {
+  const k = findKing(board, color);
+  if (!k) return false;
+  return isSquareAttacked(board, k.row, k.col, color === WHITE ? BLACK : WHITE);
+}
+
+// Pseudo-legal moves for the piece at (row,col) — doesn't yet filter out
+// moves that leave the mover's own king in check.
+function pseudoMoves(state, row, col) {
+  const board = state.board;
+  const p = board[row][col];
+  if (!p) return [];
+  const color = pieceColor(p);
+  const type = p.toUpperCase();
+  const moves = [];
+
+  const addIfLegalTarget = (r, c, opts) => {
+    if (!inBounds(r, c)) return false;
+    const target = board[r][c];
+    if (target && pieceColor(target) === color) return false;
+    moves.push(Object.assign({ toRow: r, toCol: c, capture: !!target }, opts || {}));
+    return !target; // true if empty (sliding pieces can continue)
+  };
+
+  if (type === "P") {
+    const dir = color === WHITE ? -1 : 1;
+    const startRow = color === WHITE ? 6 : 1;
+    const promoRow = color === WHITE ? 0 : 7;
+    // forward 1
+    if (inBounds(row + dir, col) && !board[row + dir][col]) {
+      moves.push({ toRow: row + dir, toCol: col, capture: false,
+                   promotion: (row + dir === promoRow) });
+      // forward 2 from start
+      if (row === startRow && !board[row + 2 * dir][col]) {
+        moves.push({ toRow: row + 2 * dir, toCol: col, capture: false, doubleStep: true });
+      }
+    }
+    // captures
+    for (const dc of [-1, 1]) {
+      const r = row + dir, c = col + dc;
+      if (inBounds(r, c)) {
+        const target = board[r][c];
+        if (target && pieceColor(target) !== color) {
+          moves.push({ toRow: r, toCol: c, capture: true, promotion: (r === promoRow) });
+        } else if (state.epTarget && state.epTarget.row === r && state.epTarget.col === c) {
+          moves.push({ toRow: r, toCol: c, capture: true, enPassant: true });
+        }
+      }
+    }
+  } else if (type === "N") {
+    const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+    for (const [dr, dc] of deltas) addIfLegalTarget(row + dr, col + dc);
+  } else if (type === "B" || type === "R" || type === "Q") {
+    const dirs = type === "B"
+      ? [[-1,-1],[-1,1],[1,-1],[1,1]]
+      : type === "R"
+      ? [[-1,0],[1,0],[0,-1],[0,1]]
+      : [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]];
+    for (const [dr, dc] of dirs) {
+      let r = row + dr, c = col + dc;
+      while (inBounds(r, c)) {
+        const cont = addIfLegalTarget(r, c);
+        if (!cont) break;
+        r += dr; c += dc;
+      }
+    }
+  } else if (type === "K") {
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        addIfLegalTarget(row + dr, col + dc);
+      }
+    // Castling
+    const rights = state.castling;
+    const homeRow = color === WHITE ? 7 : 0;
+    if (row === homeRow && col === 4 && !isInCheck(board, color)) {
+      const oppColor = color === WHITE ? BLACK : WHITE;
+      const kSideOK = color === WHITE ? rights.wK : rights.bK;
+      const qSideOK = color === WHITE ? rights.wQ : rights.bQ;
+      if (kSideOK && !board[homeRow][5] && !board[homeRow][6] &&
+          board[homeRow][7] === (color === WHITE ? "R" : "r") &&
+          !isSquareAttacked(board, homeRow, 5, oppColor) &&
+          !isSquareAttacked(board, homeRow, 6, oppColor)) {
+        moves.push({ toRow: homeRow, toCol: 6, capture: false, castle: "K" });
+      }
+      if (qSideOK && !board[homeRow][1] && !board[homeRow][2] && !board[homeRow][3] &&
+          board[homeRow][0] === (color === WHITE ? "R" : "r") &&
+          !isSquareAttacked(board, homeRow, 2, oppColor) &&
+          !isSquareAttacked(board, homeRow, 3, oppColor)) {
+        moves.push({ toRow: homeRow, toCol: 2, capture: false, castle: "Q" });
+      }
+    }
+  }
+  return moves;
+}
+
+// Apply a move to a (cloned) state in place. Handles en passant, castling,
+// auto-queen promotion, and castling-rights bookkeeping.
+function applyMoveInPlace(state, fromRow, fromCol, move) {
+  const board = state.board;
+  const p = board[fromRow][fromCol];
+  const color = pieceColor(p);
+  const type = p.toUpperCase();
+
+  // En passant capture removes the pawn behind the target square.
+  if (move.enPassant) {
+    const capRow = color === WHITE ? move.toRow + 1 : move.toRow - 1;
+    board[capRow][move.toCol] = null;
+  }
+
+  board[fromRow][fromCol] = null;
+  board[move.toRow][move.toCol] = move.promotion ? (color === WHITE ? "Q" : "q") : p;
+
+  // Castling: also move the rook.
+  if (move.castle === "K") {
+    const homeRow = color === WHITE ? 7 : 0;
+    board[homeRow][5] = board[homeRow][7];
+    board[homeRow][7] = null;
+  } else if (move.castle === "Q") {
+    const homeRow = color === WHITE ? 7 : 0;
+    board[homeRow][3] = board[homeRow][0];
+    board[homeRow][0] = null;
+  }
+
+  // Update castling rights.
+  if (type === "K") {
+    if (color === WHITE) { state.castling.wK = false; state.castling.wQ = false; }
+    else { state.castling.bK = false; state.castling.bQ = false; }
+  }
+  if (fromRow === 7 && fromCol === 0) state.castling.wQ = false;
+  if (fromRow === 7 && fromCol === 7) state.castling.wK = false;
+  if (fromRow === 0 && fromCol === 0) state.castling.bQ = false;
+  if (fromRow === 0 && fromCol === 7) state.castling.bK = false;
+  if (move.toRow === 7 && move.toCol === 0) state.castling.wQ = false;
+  if (move.toRow === 7 && move.toCol === 7) state.castling.wK = false;
+  if (move.toRow === 0 && move.toCol === 0) state.castling.bQ = false;
+  if (move.toRow === 0 && move.toCol === 7) state.castling.bK = false;
+
+  // En passant target for the *next* move only.
+  state.epTarget = move.doubleStep
+    ? { row: (fromRow + move.toRow) / 2, col: fromCol }
+    : null;
+
+  state.turn = color === WHITE ? BLACK : WHITE;
+}
+
+// Legal moves for one square: pseudo-moves filtered to those that don't
+// leave the mover's own king in check.
+function legalMovesFrom(state, row, col) {
+  const p = state.board[row][col];
+  if (!p) return [];
+  const color = pieceColor(p);
+  const candidates = pseudoMoves(state, row, col);
+  const legal = [];
+  for (const m of candidates) {
+    const clone = { board: cloneBoard(state.board), castling: Object.assign({}, state.castling),
+                     epTarget: state.epTarget, turn: state.turn };
+    applyMoveInPlace(clone, row, col, m);
+    if (!isInCheck(clone.board, color)) legal.push(m);
+  }
+  return legal;
+}
+
+function allLegalMoves(state, color) {
+  const out = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      const p = state.board[r][c];
+      if (p && pieceColor(p) === color) {
+        for (const m of legalMovesFrom(state, r, c)) {
+          out.push({ fromRow: r, fromCol: c, move: m });
+        }
+      }
+    }
+  return out;
+}
+
+function boardToFEN(state) {
+  let rows = [];
+  for (let r = 0; r < 8; r++) {
+    let row = "", empty = 0;
+    for (let c = 0; c < 8; c++) {
+      const p = state.board[r][c];
+      if (!p) { empty++; continue; }
+      if (empty) { row += empty; empty = 0; }
+      row += p;
+    }
+    if (empty) row += empty;
+    rows.push(row);
+  }
+  const placement = rows.join("/");
+  const turn = state.turn;
+  let castle = "";
+  if (state.castling.wK) castle += "K";
+  if (state.castling.wQ) castle += "Q";
+  if (state.castling.bK) castle += "k";
+  if (state.castling.bQ) castle += "q";
+  if (!castle) castle = "-";
+  const ep = state.epTarget ? squareName(state.epTarget.row, state.epTarget.col) : "-";
+  return `${placement} ${turn} ${castle} ${ep} 0 1`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════════════════
+
+let state = newGameState();
+let selected = null;      // {row, col}
+let legalForSelected = [];
+let gameOver = false;
+let pendingAIRequestId = null;
+
+const boardEl = document.getElementById("board");
+const statusEl = document.getElementById("status");
+const newGameBtn = document.getElementById("newGameBtn");
+
+function setStatus(text, cls) {
+  statusEl.textContent = text;
+  statusEl.className = "status" + (cls ? " " + cls : "");
+}
+
+function render() {
+  boardEl.innerHTML = "";
+  const kingInCheckSq = (() => {
+    if (!isInCheck(state.board, state.turn)) return null;
+    return findKing(state.board, state.turn);
+  })();
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const sq = document.createElement("div");
+      sq.className = "sq " + ((r + c) % 2 === 0 ? "light" : "dark");
+      sq.dataset.row = r;
+      sq.dataset.col = c;
+
+      const p = state.board[r][c];
+      if (p) {
+        const glyph = document.createElement("div");
+        glyph.className = "piece " + (pieceColor(p) === WHITE ? "white" : "black");
+        glyph.textContent = PIECE_GLYPHS[p];
+        sq.appendChild(glyph);
+      }
+
+      if (selected && selected.row === r && selected.col === c) {
+        sq.classList.add("selected");
+      }
+      if (kingInCheckSq && kingInCheckSq.row === r && kingInCheckSq.col === c) {
+        sq.classList.add("in-check");
+      }
+      const legalHere = legalForSelected.find(m => m.toRow === r && m.toCol === c);
+      if (legalHere) {
+        if (legalHere.capture) {
+          sq.classList.add("legal-capture");
+        } else {
+          sq.classList.add("legal-move");
+          const dot = document.createElement("div");
+          dot.className = "dot";
+          sq.appendChild(dot);
+        }
+      }
+
+      sq.addEventListener("click", onSquareClick);
+      boardEl.appendChild(sq);
+    }
+  }
+}
+
+function onSquareClick(e) {
+  if (gameOver || state.turn !== WHITE) return; // human only plays White, and only on their turn
+  const r = parseInt(e.currentTarget.dataset.row, 10);
+  const c = parseInt(e.currentTarget.dataset.col, 10);
+  const p = state.board[r][c];
+
+  if (selected) {
+    const chosen = legalForSelected.find(m => m.toRow === r && m.toCol === c);
+    if (chosen) {
+      makeMove(selected.row, selected.col, chosen);
+      selected = null;
+      legalForSelected = [];
+      render();
+      afterMove();
+      return;
+    }
+    if (p && pieceColor(p) === WHITE) {
+      selected = { row: r, col: c };
+      legalForSelected = legalMovesFrom(state, r, c);
+      render();
+      return;
+    }
+    selected = null;
+    legalForSelected = [];
+    render();
+    return;
+  }
+
+  if (p && pieceColor(p) === WHITE) {
+    selected = { row: r, col: c };
+    legalForSelected = legalMovesFrom(state, r, c);
+    render();
+  }
+}
+
+function makeMove(fromRow, fromCol, move) {
+  applyMoveInPlace(state, fromRow, fromCol, move);
+  state.history.push({ from: squareName(fromRow, fromCol), to: squareName(move.toRow, move.toCol) });
+}
+
+function afterMove() {
+  const moves = allLegalMoves(state, state.turn);
+  const inCheck = isInCheck(state.board, state.turn);
+
+  if (moves.length === 0) {
+    gameOver = true;
+    if (inCheck) {
+      const winner = state.turn === WHITE ? "Electra" : "You";
+      setStatus(`Checkmate — ${winner} win${winner === "You" ? "" : "s"}!`, "over");
+    } else {
+      setStatus("Stalemate — draw.", "over");
+    }
+    return;
+  }
+
+  if (inCheck) {
+    setStatus(state.turn === WHITE ? "Check! Your move." : "Check! Electra's move…", "check");
+  } else {
+    setStatus(state.turn === WHITE ? "Your move" : "Electra is thinking…",
+              state.turn === WHITE ? "" : "thinking");
+  }
+
+  if (state.turn === BLACK && !gameOver) {
+    requestAIMove();
+  }
+}
+
+function pickRandomMove(moves) {
+  return moves[Math.floor(Math.random() * moves.length)];
+}
+
+function requestAIMove() {
+  const moves = allLegalMoves(state, BLACK);
+  if (moves.length === 0) return; // afterMove() already handled game-over
+
+  const requestId = "move-" + Date.now();
+  pendingAIRequestId = requestId;
+
+  const fen = boardToFEN(state);
+  const lastMove = state.history.length
+    ? state.history[state.history.length - 1]
+    : null;
+
+  const messages = [
+    {
+      role: "system",
+      content: "You are playing chess as Black against a human opponent (White). " +
+        "You will be given the current position as a FEN string. Choose a legal " +
+        "move for Black and call the submit_move tool with the origin and " +
+        "destination squares in algebraic notation (e.g. from: 'g8', to: 'f6'). " +
+        "Only call the tool — do not explain your reasoning in prose."
+    },
+    {
+      role: "user",
+      content: `Current position (FEN): ${fen}` +
+        (lastMove ? `\nWhite just played ${lastMove.from}-${lastMove.to}.` : "") +
+        `\nIt is Black's turn. Call submit_move now.`
+    }
+  ];
+
+  const tools = [
+    {
+      type: "function",
+      function: {
+        name: "submit_move",
+        description: "Submit your chosen chess move as Black.",
+        parameters: {
+          type: "object",
+          properties: {
+            from: { type: "string", description: "Origin square, e.g. 'g8'" },
+            to:   { type: "string", description: "Destination square, e.g. 'f6'" },
+            promotion: { type: "string", description: "Optional promotion piece letter" }
+          },
+          required: ["from", "to"]
+        }
+      }
+    }
+  ];
+
+  window.electraAIResponse = handleAIResponse;
+  window.webkit.messageHandlers.electra.postMessage(JSON.stringify({
+    action: "ai_request",
+    request_id: requestId,
+    conversation_id: state.conversationId,
+    messages: messages,
+    tools: tools,
+  }));
+
+  // Safety timeout: if nothing comes back (bridge unavailable, network hang
+  // beyond expectation, etc.) fall back to a random legal move so the game
+  // never just freezes waiting forever.
+  setTimeout(() => {
+    if (pendingAIRequestId === requestId) {
+      console.warn("[Chess] AI response timed out — falling back to random move.");
+      playFallbackMove(moves, requestId);
+    }
+  }, 15000);
+}
+
+function handleAIResponse(requestId, result) {
+  if (requestId !== pendingAIRequestId) return; // stale response, ignore
+  const moves = allLegalMoves(state, BLACK);
+
+  if (result && result.error) {
+    console.warn("[Chess] AI bridge error:", result.error, "— falling back to random move.");
+    playFallbackMove(moves, requestId);
+    return;
+  }
+
+  const parsed = parseMoveFromResponse(result);
+  if (!parsed) {
+    console.warn("[Chess] Could not parse a move from AI response — falling back to random move.", result);
+    playFallbackMove(moves, requestId);
+    return;
+  }
+
+  const match = moves.find(m =>
+    squareName(m.fromRow, m.fromCol) === parsed.from &&
+    squareName(m.move.toRow, m.move.toCol) === parsed.to
+  );
+
+  if (!match) {
+    console.warn("[Chess] AI suggested an illegal move (" + parsed.from + "-" + parsed.to +
+                 ") — falling back to random move.");
+    playFallbackMove(moves, requestId);
+    return;
+  }
+
+  pendingAIRequestId = null;
+  makeMove(match.fromRow, match.fromCol, match.move);
+  render();
+  afterMove();
+}
+
+function playFallbackMove(moves, requestId) {
+  if (requestId !== pendingAIRequestId) return;
+  pendingAIRequestId = null;
+  if (!moves.length) return;
+  const choice = pickRandomMove(moves);
+  makeMove(choice.fromRow, choice.fromCol, choice.move);
+  render();
+  afterMove();
+}
+
+// Defensive parsing: try the standard OpenAI-style tool_calls shape first,
+// fall back to scanning message content for a UCI-like "e2e4"/"e2-e4" pattern
+// if the model replied in prose instead of calling the tool. This is a best
+// guess at the response shape and may need correcting once tested against
+// the real server (see test_chess_tool_call.py).
+function parseMoveFromResponse(result) {
+  try {
+    const choice = result.choices && result.choices[0];
+    const msg = choice && choice.message;
+    if (msg && msg.tool_calls && msg.tool_calls.length) {
+      const call = msg.tool_calls[0];
+      const args = typeof call.function.arguments === "string"
+        ? JSON.parse(call.function.arguments)
+        : call.function.arguments;
+      if (args && args.from && args.to) {
+        return { from: args.from.toLowerCase(), to: args.to.toLowerCase(),
+                 promotion: args.promotion || null };
+      }
+    }
+    const content = msg && msg.content;
+    if (typeof content === "string") {
+      const m = content.match(/\b([a-h][1-8])\s*-?\s*([a-h][1-8])\b/i);
+      if (m) return { from: m[1].toLowerCase(), to: m[2].toLowerCase(), promotion: null };
+    }
+  } catch (e) {
+    console.warn("[Chess] Error parsing AI response:", e);
+  }
+  return null;
+}
+
+newGameBtn.addEventListener("click", () => {
+  state = newGameState();
+  selected = null;
+  legalForSelected = [];
+  gameOver = false;
+  pendingAIRequestId = null;
+  setStatus("Your move");
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
