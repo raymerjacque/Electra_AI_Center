@@ -1,0 +1,6 @@
+{
+  "name": "Chess",
+  "description": "Play chess against Electra AI — you are White",
+  "entry": "index.html",
+  "version": "1.0"
+}
