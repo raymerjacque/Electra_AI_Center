@@ -1,0 +1,6 @@
+{
+  "name": "Same-Game",
+  "description": "Match 2+ same-colored balls to clear them and score points — beat your high score",
+  "entry": "index.html",
+  "version": "1.0"
+}
