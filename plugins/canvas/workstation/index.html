@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Workstation</title>
+<style>
+  :root {
+    --bg: linear-gradient(160deg, #2b0f3a, #7a2b4a, #e0713c);
+    --widget-bg: rgba(45, 20, 35, 0.85);
+    --widget-border: rgba(255, 138, 91, 0.3);
+    --text: #fff3e6;
+    --text-dim: rgba(255, 243, 230, 0.6);
+    --accent: #ff8a5b;
+    --accent2: #ffd166;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'Ubuntu', 'Cantarell', 'Segoe UI', sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  body {
+    background: var(--bg);
+    transition: background 0.4s ease;
+  }
+
+  /* Full-space desktop — deliberately NOT centered/buffered like other
+     plugins; this one is meant to fill the whole canvas like a real
+     workstation desktop. */
+  #desktop {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .widget {
+    position: absolute;
+    background: var(--widget-bg);
+    border: 1px solid var(--widget-border);
+    border-radius: 14px;
+    box-shadow: 0 12px 34px rgba(0,0,0,0.4);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: background 0.4s ease, border-color 0.4s ease;
+  }
+
+  .widget-head {
+    height: 26px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    cursor: grab;
+    background: rgba(255,255,255,0.04);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .widget-head:active { cursor: grabbing; }
+
+  .widget-body {
+    flex: 1;
+    padding: 12px;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  /* ── Clock ────────────────────────────────────────────────────────────── */
+  #widget-clock { width: 220px; height: 280px; }
+  #widget-clock .widget-head { display: flex; justify-content: space-between; }
+  .widget-btn {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 12px; text-transform: none; letter-spacing: 0; padding: 0 2px;
+  }
+  .widget-btn:hover { color: var(--accent); }
+  #widget-clock .widget-body {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+  }
+  .clock-face { display: none; flex-direction: column; align-items: center; gap: 8px; }
+  .clock-face.active { display: flex; }
+  #clockFace { width: 170px; height: 170px; }
+  #clockFaceMinimal { width: 150px; height: 150px; }
+  #clockDigital, .clock-digital-large {
+    font-size: 15px; font-weight: 700; letter-spacing: 0.04em;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .clock-digital-large { font-size: 34px; }
+  #clockDate, .clock-date-sub { font-size: 11px; color: var(--text-dim); }
+
+  .clock-retro-screen {
+    background: #0a1108;
+    border-radius: 8px;
+    padding: 14px 18px;
+    box-shadow: inset 0 0 14px rgba(0,0,0,0.6);
+  }
+  .clock-retro-time {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-weight: 700; font-size: 32px; letter-spacing: 0.12em;
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--accent);
+  }
+
+  .clock-binary-grid { display: flex; gap: 10px; }
+  .clock-binary-col { display: flex; flex-direction: column-reverse; gap: 5px; }
+  .clock-binary-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+  }
+  .clock-binary-dot.lit { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .clock-binary-labels { display: flex; gap: 10px; font-size: 9px; color: var(--text-dim); }
+  .clock-binary-labels span { width: 34px; text-align: center; }
+
+  .style-popover {
+    position: absolute;
+    top: 30px; right: 6px;
+    background: rgba(10,12,16,0.92);
+    border: 1px solid var(--widget-border);
+    border-radius: 10px;
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 50;
+    min-width: 150px;
+  }
+  .style-popover.open { display: flex; }
+  .style-option {
+    background: none; border: none; text-align: left;
+    padding: 6px 8px; border-radius: 6px;
+    color: var(--text); font-size: 12px; cursor: pointer;
+  }
+  .style-option:hover { background: rgba(255,255,255,0.08); }
+  .style-option.active { color: var(--accent); font-weight: 700; }
+
+  /* ── Calculator ───────────────────────────────────────────────────────── */
+  #widget-calculator { width: 220px; height: 320px; }
+  #calcDisplay {
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    text-align: right;
+    color: var(--text);
+    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    flex: 1;
+  }
+  .calc-btn {
+    border: none;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .calc-btn:hover { background: rgba(255,255,255,0.14); }
+  .calc-btn.op { color: var(--accent); background: rgba(255,255,255,0.09); }
+  .calc-btn.eq { background: var(--accent); color: #0a0e14; font-weight: 700; }
+  .calc-btn.clear { color: #ff8a8a; }
+
+  /* ── Calendar ─────────────────────────────────────────────────────────── */
+  #widget-calendar { width: 260px; height: 280px; }
+  .cal-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; font-size: 13px; font-weight: 700;
+  }
+  .cal-nav-btn {
+    background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
+    color: var(--accent); width: 22px; height: 22px; cursor: pointer; font-size: 13px;
+  }
+  .cal-nav-btn:hover { background: rgba(255,255,255,0.14); }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+    font-size: 11px; text-align: center;
+  }
+  .cal-dow { color: var(--text-dim); font-weight: 700; padding: 2px 0; }
+  .cal-day {
+    padding: 5px 0; border-radius: 6px; color: var(--text);
+  }
+  .cal-day.today { background: var(--accent); color: #0a0e14; font-weight: 700; }
+  .cal-day.empty { visibility: hidden; }
+
+  /* ── Notepad ──────────────────────────────────────────────────────────── */
+  #widget-notepad { width: 440px; height: 300px; min-width: 260px; min-height: 160px; resize: both; overflow: auto; }
+  #notepadArea {
+    width: 100%; height: 100%;
+    background: transparent; border: none; outline: none; resize: none;
+    color: var(--text); font-size: 13px; line-height: 1.5;
+    font-family: 'Ubuntu', sans-serif;
+    -webkit-user-select: text; user-select: text;
+  }
+  #notepadArea::placeholder { color: var(--text-dim); }
+
+  /* ── Sticky notes ─────────────────────────────────────────────────────── */
+  .sticky {
+    width: 170px; height: 150px;
+    background: rgba(140,140,140,0.25);
+    filter: grayscale(1);
+    opacity: 0.55;
+    resize: both; overflow: auto;
+    transition: filter 0.5s ease, opacity 0.5s ease, background 0.5s ease;
+  }
+  .sticky.filled {
+    filter: grayscale(0);
+    opacity: 1;
+  }
+  .sticky .widget-head {
+    background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.5);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .sticky-del {
+    width: 15px; height: 15px; border-radius: 50%;
+    background: rgba(0,0,0,0.15); color: rgba(0,0,0,0.55);
+    font-size: 10px; line-height: 15px; text-align: center; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .sticky-del:hover { background: rgba(220,50,50,0.85); color: #fff; }
+  .sticky-body {
+    flex: 1; padding: 10px;
+    font-size: 13px; line-height: 1.4;
+    color: rgba(20,20,15,0.85);
+    outline: none; overflow-y: auto;
+    -webkit-user-select: text; user-select: text;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .sticky-body:empty::before { content: "Type a reminder…"; color: rgba(20,20,15,0.4); }
+
+  /* ── To-Do list ───────────────────────────────────────────────────────── */
+  #widget-todo { width: 260px; height: 300px; }
+  .todo-add-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  #todoInput {
+    flex: 1; background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
+    color: var(--text); padding: 6px 8px; font-size: 12.5px; outline: none;
+  }
+  #todoAddBtn {
+    background: var(--accent); color: #0a0e14; border: none; border-radius: 6px;
+    width: 28px; font-weight: 700; cursor: pointer; font-size: 15px;
+  }
+  .todo-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 2px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .todo-item input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+  .todo-item .todo-text { flex: 1; word-break: break-word; }
+  .todo-item.done .todo-text { text-decoration: line-through; color: var(--text-dim); }
+  .todo-del {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 12px; flex-shrink: 0;
+  }
+  .todo-del:hover { color: #ff8a8a; }
+
+  /* ── News ─────────────────────────────────────────────────────────────── */
+  #widget-news { width: 300px; height: 360px; min-width: 240px; min-height: 200px; resize: both; overflow: auto; }
+  #widget-news .widget-head { display: flex; justify-content: space-between; }
+  #newsRefreshBtn {
+    background: none; border: none; color: var(--accent); cursor: pointer;
+    font-size: 12px; font-weight: 700; text-transform: none; letter-spacing: 0;
+  }
+  #newsContent { font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; color: var(--text); }
+  #newsContent.dim { color: var(--text-dim); font-style: italic; }
+
+  /* ── Theme selector ───────────────────────────────────────────────────── */
+  /* ── System monitor (bottom edge, fixed vivid colors regardless of theme,
+     so it stays visible/legible against every theme rather than blending
+     into whichever accent color happens to be active) ───────────────────── */
+  #sysMonitor {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 9998;
+    display: flex;
+    flex-direction: column-reverse; /* RAM nearest the true bottom edge */
+    pointer-events: none;
+  }
+  .sysbar-track {
+    position: relative;
+    width: 100%; height: 9px;
+    background: rgba(0,0,0,0.35);
+    pointer-events: auto;
+  }
+  .sysbar-fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 0%;
+    transition: width 0.4s ease-out;
+  }
+  .sysbar-fill.ram  { background: #00e5ff; box-shadow: 0 0 8px rgba(0,229,255,0.7); }
+  .sysbar-fill.cpu  { background: #ff5252; box-shadow: 0 0 8px rgba(255,82,82,0.7); }
+  .sysbar-fill.disk { background: #69f0ae; box-shadow: 0 0 8px rgba(105,240,174,0.7); }
+
+  /* ── Image preview widget ─────────────────────────────────────────────── */
+  #widget-image { width: 220px; height: 220px; min-width: 140px; min-height: 140px; resize: both; overflow: auto; }
+  #widget-image .widget-body { padding: 0; overflow: hidden; }
+  #imagePreviewImg {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    display: block;
+    -webkit-user-drag: none;
+  }
+  #imageHint {
+    position: absolute; bottom: 6px; left: 0; right: 0;
+    text-align: center; font-size: 10px; color: rgba(255,255,255,0.85);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    pointer-events: none;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  #widget-image:hover #imageHint { opacity: 1; }
+
+  #bottomDock {
+    position: fixed;
+    left: 18px; bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
+    z-index: 9999;
+  }
+  #addNoteBtn {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.25);
+    background: rgba(10,12,16,0.7);
+    color: var(--accent);
+    font-size: 19px; font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+  #addNoteBtn:hover { background: rgba(255,255,255,0.1); }
+  #themeSelector {
+    display: flex; align-items: center; gap: 8px;
+  }
+  #themeToggleBtn {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.25);
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+  #themeSwatches {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(10,12,16,0.7);
+    border-radius: 24px;
+    padding: 6px 10px;
+    max-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-width 0.3s ease, opacity 0.2s ease, padding 0.3s ease;
+  }
+  #themeSwatches.open {
+    max-width: 500px;
+    opacity: 1;
+  }
+  .theme-swatch {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.1s;
+  }
+  .theme-swatch:hover { transform: scale(1.15); }
+  .theme-swatch.active { border-color: #fff; }
+</style>
+</head>
+<body>
+<div id="desktop">
+  <div class="widget" id="widget-clock">
+    <div class="widget-head">Clock <button class="widget-btn" id="clockStyleBtn" title="Change clock style">⚙</button></div>
+    <div class="widget-body">
+      <div class="clock-face" data-style="analogueClassic">
+        <svg id="clockFace" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="94" fill="rgba(255,255,255,0.03)" stroke="var(--accent)" stroke-width="2"/>
+          <g id="clockTicks"></g>
+          <line id="handHour" x1="100" y1="100" x2="100" y2="55" stroke="var(--text)" stroke-width="6" stroke-linecap="round"/>
+          <line id="handMin" x1="100" y1="100" x2="100" y2="35" stroke="var(--text)" stroke-width="4" stroke-linecap="round"/>
+          <line id="handSec" x1="100" y1="100" x2="100" y2="25" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="100" cy="100" r="5" fill="var(--accent)"/>
+        </svg>
+        <div id="clockDigital">00:00:00</div>
+        <div id="clockDate">—</div>
+      </div>
+
+      <div class="clock-face" data-style="analogueMinimal">
+        <svg id="clockFaceMinimal" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="94" fill="none" stroke="var(--text-dim)" stroke-width="1"/>
+          <line id="handHourMin" x1="100" y1="100" x2="100" y2="60" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/>
+          <line id="handMinMin" x1="100" y1="100" x2="100" y2="30" stroke="var(--text)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="100" cy="100" r="3" fill="var(--accent)"/>
+        </svg>
+        <div class="clock-date-sub" id="clockDateMinimal">—</div>
+      </div>
+
+      <div class="clock-face" data-style="digitalLarge">
+        <div class="clock-digital-large" id="clockDigitalLarge">00:00:00</div>
+        <div class="clock-date-sub" id="clockDateLarge">—</div>
+      </div>
+
+      <div class="clock-face" data-style="digitalRetro">
+        <div class="clock-retro-screen">
+          <div class="clock-retro-time" id="clockRetroTime">00:00:00</div>
+        </div>
+        <div class="clock-date-sub" id="clockDateRetro">—</div>
+      </div>
+
+      <div class="clock-face" data-style="binary">
+        <div class="clock-binary-grid" id="clockBinaryGrid"></div>
+        <div class="clock-binary-labels"><span>H</span><span>M</span><span>S</span></div>
+        <div class="clock-date-sub" id="clockDateBinary">—</div>
+      </div>
+
+      <div class="style-popover" id="clockStylePopover"></div>
+    </div>
+  </div>
+
+  <div class="widget" id="widget-calculator">
+    <div class="widget-head">Calculator</div>
+    <div class="widget-body" style="display:flex; flex-direction:column;">
+      <div id="calcDisplay">0</div>
+      <div class="calc-grid" id="calcGrid"></div>
+    </div>
+  </div>
+
+  <div class="widget" id="widget-calendar">
+    <div class="widget-head">Calendar</div>
+    <div class="widget-body">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="calPrev">‹</button>
+        <span id="calLabel">Month Year</span>
+        <button class="cal-nav-btn" id="calNext">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <div class="widget" id="widget-notepad">
+    <div class="widget-head">Notepad</div>
+    <div class="widget-body">
+      <textarea id="notepadArea" placeholder="Jot something down…"></textarea>
+    </div>
+  </div>
+
+  <div class="widget" id="widget-news">
+    <div class="widget-head">Latest News <button id="newsRefreshBtn">Refresh</button></div>
+    <div class="widget-body">
+      <div id="newsContent" class="dim">Fetching current headlines…</div>
+    </div>
+  </div>
+
+  <div class="widget" id="widget-todo">
+    <div class="widget-head">To-Do</div>
+    <div class="widget-body">
+      <div class="todo-add-row">
+        <input type="text" id="todoInput" placeholder="Add a task…">
+        <button id="todoAddBtn">+</button>
+      </div>
+      <div id="todoList"></div>
+    </div>
+  </div>
+
+  <div class="widget" id="widget-image">
+    <div class="widget-head">Preview</div>
+    <div class="widget-body">
+      <img id="imagePreviewImg" src="../ai-icon.png" alt="preview">
+      <div id="imageHint">Click to browse wallpapers</div>
+    </div>
+  </div>
+
+  <!-- Sticky notes injected by JS -->
+  <div id="stickyLayer"></div>
+</div>
+
+<div id="sysMonitor">
+  <div class="sysbar-track" title="RAM usage"><div class="sysbar-fill ram" id="sysbarRam"></div></div>
+  <div class="sysbar-track" title="CPU usage"><div class="sysbar-fill cpu" id="sysbarCpu"></div></div>
+  <div class="sysbar-track" title="Disk I/O"><div class="sysbar-fill disk" id="sysbarDisk"></div></div>
+</div>
+
+<div id="bottomDock">
+  <button id="addNoteBtn" title="Add a sticky note">📝</button>
+  <div id="themeSelector">
+    <div id="themeToggleBtn"></div>
+    <div id="themeSwatches"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Pure logic (DOM-free, independently testable under Node)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const THEMES = {
+  midnight:  { name: "Midnight",   bg: "linear-gradient(160deg,#0a0e14,#131b2b)", widgetBg: "rgba(20,26,38,0.92)",  widgetBorder: "rgba(0,210,255,0.25)",  text: "#e7ecf3", textDim: "rgba(231,236,243,0.6)", accent: "#00d2ff", accent2: "#7dd3fc" },
+  cyberpunk: { name: "Cyberpunk",  bg: "linear-gradient(160deg,#0d0117,#1a0330)", widgetBg: "rgba(20,8,32,0.92)",   widgetBorder: "rgba(255,46,136,0.3)",  text: "#f5e8ff", textDim: "rgba(245,232,255,0.6)", accent: "#ff2e88", accent2: "#00fff2" },
+  sunset:    { name: "Sunset",     bg: "linear-gradient(160deg,#2b0f3a,#7a2b4a,#e0713c)", widgetBg: "rgba(45,20,35,0.85)", widgetBorder: "rgba(255,138,91,0.3)", text: "#fff3e6", textDim: "rgba(255,243,230,0.6)", accent: "#ff8a5b", accent2: "#ffd166" },
+  forest:    { name: "Forest",     bg: "linear-gradient(160deg,#0b1710,#16281c)", widgetBg: "rgba(15,28,20,0.9)",   widgetBorder: "rgba(123,216,143,0.3)", text: "#e6f5e9", textDim: "rgba(230,245,233,0.6)", accent: "#7bd88f", accent2: "#c7f59b" },
+  ocean:     { name: "Ocean",      bg: "linear-gradient(160deg,#031420,#053246)", widgetBg: "rgba(6,32,45,0.9)",    widgetBorder: "rgba(79,216,224,0.3)",  text: "#e3fbfb", textDim: "rgba(227,251,251,0.6)", accent: "#4fd8e0", accent2: "#8be9c8" },
+  lightStudio:{ name: "Light Studio", bg: "linear-gradient(160deg,#f4f6f9,#e7ecf2)", widgetBg: "rgba(255,255,255,0.92)", widgetBorder: "rgba(0,0,0,0.08)", text: "#1f2937", textDim: "rgba(31,41,55,0.55)", accent: "#3b82f6", accent2: "#6366f1" },
+  paper:     { name: "Paper",      bg: "linear-gradient(160deg,#f7f1e3,#eee0c8)", widgetBg: "rgba(255,252,244,0.92)", widgetBorder: "rgba(181,101,29,0.25)", text: "#3a2c1a", textDim: "rgba(58,44,26,0.55)", accent: "#b5651d", accent2: "#d99a4e" },
+  vaporwave: { name: "Vaporwave",  bg: "linear-gradient(160deg,#1a1030,#3a1c4d,#5c2a6b)", widgetBg: "rgba(40,20,55,0.85)", widgetBorder: "rgba(255,158,229,0.3)", text: "#fbe9ff", textDim: "rgba(251,233,255,0.6)", accent: "#ff9ee5", accent2: "#8fe3ff" },
+  matrix:    { name: "Matrix",     bg: "linear-gradient(160deg,#000200,#001a05)", widgetBg: "rgba(0,15,4,0.9)",     widgetBorder: "rgba(57,255,106,0.3)",  text: "#c8ffd2", textDim: "rgba(200,255,210,0.55)", accent: "#39ff6a", accent2: "#9dffb0" },
+  royal:     { name: "Royal",      bg: "linear-gradient(160deg,#160a2e,#2b1050)", widgetBg: "rgba(30,14,55,0.9)",   widgetBorder: "rgba(232,193,90,0.3)",  text: "#f1e9ff", textDim: "rgba(241,233,255,0.6)", accent: "#e8c15a", accent2: "#b892ff" },
+  roseGold:  { name: "Rose Gold",  bg: "linear-gradient(160deg,#fbe4e8,#f6d3d9)", widgetBg: "rgba(255,250,251,0.92)", widgetBorder: "rgba(201,138,156,0.3)", text: "#4a2b33", textDim: "rgba(74,43,51,0.55)", accent: "#c98a9c", accent2: "#e0a96d" },
+  amber:     { name: "Amber Term", bg: "linear-gradient(160deg,#0a0500,#1a0d00)", widgetBg: "rgba(20,10,0,0.9)",    widgetBorder: "rgba(255,176,0,0.3)",   text: "#ffdca8", textDim: "rgba(255,220,168,0.55)", accent: "#ffb000", accent2: "#ffd873" },
+};
+const THEME_ORDER = ["midnight","cyberpunk","sunset","forest","ocean","lightStudio","paper","vaporwave","matrix","royal","roseGold","amber"];
+const DEFAULT_THEME = "sunset";
+
+function getMonthGrid(year, month) {
+  // month is 0-11. Returns an array of week-rows, each an array of 7 cells
+  // (day number 1..N, or null for padding before/after the month).
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = firstDay.getDay(); // 0 = Sunday
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
+function calcInitState() {
+  return { display: "0", prev: null, operator: null, waitingForNew: false };
+}
+
+function calcApply(a, b, op) {
+  switch (op) {
+    case "+": return a + b;
+    case "-": return a - b;
+    case "*": return a * b;
+    case "/": return b === 0 ? null : a / b;
+    default: return b;
+  }
+}
+
+function calcFormat(n) {
+  if (n === null || Number.isNaN(n)) return "Error";
+  // Trim floating point noise, cap display length.
+  const rounded = Math.round(n * 1e10) / 1e10;
+  const s = String(rounded);
+  return s.length > 14 ? rounded.toExponential(6) : s;
+}
+
+function calcInput(state, key) {
+  const s = Object.assign({}, state);
+
+  if (s.display === "Error" && key !== "C") {
+    // Any key after an error just starts fresh, as if C was pressed first.
+    return calcInput(calcInitState(), key);
+  }
+
+  if (key === "C") {
+    return calcInitState();
+  }
+
+  if (key === ".") {
+    if (s.waitingForNew) { s.display = "0."; s.waitingForNew = false; return s; }
+    if (!s.display.includes(".")) s.display += ".";
+    return s;
+  }
+
+  if (/^[0-9]$/.test(key)) {
+    if (s.waitingForNew || s.display === "0") { s.display = key; s.waitingForNew = false; }
+    else { s.display += key; }
+    return s;
+  }
+
+  if (["+", "-", "*", "/"].includes(key)) {
+    const current = parseFloat(s.display);
+    if (s.prev === null) {
+      s.prev = current;
+    } else if (!s.waitingForNew) {
+      s.prev = calcApply(s.prev, current, s.operator);
+      s.display = calcFormat(s.prev);
+    }
+    s.operator = key;
+    s.waitingForNew = true;
+    return s;
+  }
+
+  if (key === "=") {
+    if (s.prev !== null && s.operator !== null) {
+      const current = parseFloat(s.display);
+      const result = calcApply(s.prev, current, s.operator);
+      s.display = calcFormat(result);
+      s.prev = null;
+      s.operator = null;
+      s.waitingForNew = true;
+    }
+    return s;
+  }
+
+  return s;
+}
+
+function clampPosition(x, y, w, h, areaW, areaH) {
+  const maxX = Math.max(0, areaW - w);
+  const maxY = Math.max(0, areaH - h);
+  return { x: Math.max(0, Math.min(maxX, x)), y: Math.max(0, Math.min(maxY, y)) };
+}
+
+const CLOCK_STYLES = [
+  { id: "analogueClassic", name: "Classic Analogue" },
+  { id: "analogueMinimal", name: "Minimal Analogue" },
+  { id: "digitalLarge",    name: "Digital Large" },
+  { id: "digitalRetro",    name: "Digital Retro" },
+  { id: "binary",          name: "Binary" },
+];
+const DEFAULT_CLOCK_STYLE = "analogueClassic";
+
+function digitToBits(d) {
+  // Single decimal digit (0-9) -> 4-bit array [8,4,2,1], MSB first.
+  return [8, 4, 2, 1].map(b => (d & b) ? 1 : 0);
+}
+
+function rectsOverlap(a, b) {
+  return !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
+}
+
+function findEmptySpot(existingRects, w, h, areaW, areaH, maxTries, rand) {
+  maxTries = maxTries || 60;
+  rand = rand || Math.random;
+  for (let i = 0; i < maxTries; i++) {
+    const x = rand() * Math.max(0, areaW - w);
+    const y = rand() * Math.max(0, areaH - h);
+    const candidate = { x, y, w, h };
+    const collides = existingRects.some(r => rectsOverlap(candidate, r));
+    if (!collides) return { x: Math.round(x), y: Math.round(y) };
+  }
+  // Fallback: cascade diagonally from the top-left so notes never fully
+  // stack exactly on top of each other even in a crowded desktop.
+  const idx = existingRects.length;
+  return clampPosition(20 + (idx * 26) % Math.max(1, areaW - w), 20 + (idx * 26) % Math.max(1, areaH - h), w, h, areaW, areaH);
+}
+
+function stripThinkTags(text) {
+  if (typeof text !== "string") return text;
+  // Matched <think>...</think> blocks first (models sometimes emit their
+  // reasoning wrapped in these before the actual answer).
+  let out = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
+  // Defensive second pass: an unmatched/unclosed opening tag (truncated
+  // response, etc.) — strip from there to the end rather than showing
+  // a dangling raw tag.
+  out = out.replace(/<think>[\s\S]*/gi, "");
+  return out.trim();
+}
+
+function serializeWorkstationState(data) {
+  return JSON.stringify(Object.assign({ v: 2 }, data));
+}
+
+function deserializeWorkstationState(json) {
+  try {
+    const d = JSON.parse(json);
+    if (!d || (d.v !== 1 && d.v !== 2)) return null;
+
+    let stickyNotes = d.stickyNotes || {};
+    // v1 stored sticky notes as {id: "text"} with positions living in the
+    // shared `positions` map under the same fixed ids. v2 gives every note
+    // its own {x, y, text} since notes are now created dynamically rather
+    // than being a fixed set of 4 — migrate old saves forward so existing
+    // notes and their text aren't lost on upgrade.
+    if (d.v === 1) {
+      const migrated = {};
+      Object.keys(stickyNotes).forEach(id => {
+        const text = stickyNotes[id];
+        const pos = (d.positions && d.positions[id]) || { x: 40, y: 40 };
+        migrated[id] = { x: pos.x, y: pos.y, text };
+      });
+      stickyNotes = migrated;
+    }
+
+    return {
+      positions: d.positions || {},
+      notepad: d.notepad || "",
+      stickyNotes,
+      todos: Array.isArray(d.todos) ? d.todos : [],
+      theme: THEMES[d.theme] ? d.theme : DEFAULT_THEME,
+      clockStyle: CLOCK_STYLES.some(s => s.id === d.clockStyle) ? d.clockStyle : DEFAULT_CLOCK_STYLE,
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+if (typeof module !== "undefined") {
+  module.exports = {
+    THEMES, THEME_ORDER, DEFAULT_THEME, getMonthGrid, calcInitState, calcApply, calcFormat,
+    calcInput, clampPosition, serializeWorkstationState, deserializeWorkstationState, stripThinkTags,
+    CLOCK_STYLES, DEFAULT_CLOCK_STYLE, digitToBits, rectsOverlap, findEmptySpot,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// App (DOM-dependent)
+// ═══════════════════════════════════════════════════════════════════════════
+if (typeof document !== "undefined") {
+
+const STORAGE_KEY = "electra_workstation_v1";
+const desktop = document.getElementById("desktop");
+
+let currentTheme = DEFAULT_THEME;
+let currentClockStyle = DEFAULT_CLOCK_STYLE;
+let todos = [];
+let zCounter = 10;
+let calState = calcInitState();
+let calView = new Date(); // month currently shown in the calendar widget
+let saveTimer = null;
+
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveState, 500);
+}
+
+function collectPositions() {
+  // Sticky notes carry their own {x,y,text} in stickyNotes instead — kept
+  // out of here so a note's position isn't stored in two places at once.
+  const positions = {};
+  document.querySelectorAll(".widget[id]").forEach(w => {
+    if (w.classList.contains("sticky")) return;
+    positions[w.id] = { x: w.offsetLeft, y: w.offsetTop };
+  });
+  return positions;
+}
+
+function collectStickyNotes() {
+  const stickyNotes = {};
+  document.querySelectorAll(".sticky").forEach(s => {
+    stickyNotes[s.id] = {
+      x: s.offsetLeft,
+      y: s.offsetTop,
+      text: s.querySelector(".sticky-body").textContent,
+    };
+  });
+  return stickyNotes;
+}
+
+function saveState() {
+  try {
+    const data = {
+      positions: collectPositions(),
+      notepad: document.getElementById("notepadArea").value,
+      stickyNotes: collectStickyNotes(),
+      todos,
+      clockStyle: currentClockStyle,
+      theme: currentTheme,
+    };
+    localStorage.setItem(STORAGE_KEY, serializeWorkstationState(data));
+  } catch (e) {
+    console.warn("[Workstation] Could not save state:", e);
+  }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return deserializeWorkstationState(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+// ── Dragging ──────────────────────────────────────────────────────────────
+function makeDraggable(widgetEl) {
+  const head = widgetEl.querySelector(".widget-head");
+  let offset = null;
+
+  head.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return; // let header buttons (news refresh) work
+    widgetEl.style.zIndex = ++zCounter;
+    const rect = desktop.getBoundingClientRect();
+    offset = { x: e.clientX - rect.left - widgetEl.offsetLeft, y: e.clientY - rect.top - widgetEl.offsetTop };
+    head.setPointerCapture(e.pointerId);
+  });
+  head.addEventListener("pointermove", (e) => {
+    if (!offset) return;
+    const rect = desktop.getBoundingClientRect();
+    const raw_x = e.clientX - rect.left - offset.x;
+    const raw_y = e.clientY - rect.top - offset.y;
+    const { x, y } = clampPosition(raw_x, raw_y, widgetEl.offsetWidth, widgetEl.offsetHeight, rect.width, rect.height);
+    widgetEl.style.left = x + "px";
+    widgetEl.style.top = y + "px";
+  });
+  head.addEventListener("pointerup", () => { offset = null; scheduleSave(); });
+  head.addEventListener("pointercancel", () => { offset = null; });
+}
+
+function positionWidget(el, defaultXPct, defaultYPct, saved) {
+  const rect = desktop.getBoundingClientRect();
+  if (saved && saved[el.id]) {
+    el.style.left = saved[el.id].x + "px";
+    el.style.top = saved[el.id].y + "px";
+  } else {
+    el.style.left = Math.round(rect.width * defaultXPct) + "px";
+    el.style.top = Math.round(rect.height * defaultYPct) + "px";
+  }
+}
+
+// ── Theme selector ────────────────────────────────────────────────────────
+function applyTheme(themeId) {
+  const t = THEMES[themeId] || THEMES.midnight;
+  const root = document.documentElement.style;
+  root.setProperty("--bg", t.bg);
+  root.setProperty("--widget-bg", t.widgetBg);
+  root.setProperty("--widget-border", t.widgetBorder);
+  root.setProperty("--text", t.text);
+  root.setProperty("--text-dim", t.textDim);
+  root.setProperty("--accent", t.accent);
+  root.setProperty("--accent2", t.accent2);
+  currentTheme = themeId;
+  document.getElementById("themeToggleBtn").style.background =
+    `linear-gradient(135deg, ${t.accent}, ${t.accent2})`;
+  document.querySelectorAll(".theme-swatch").forEach(sw => {
+    sw.classList.toggle("active", sw.dataset.theme === themeId);
+  });
+}
+
+function buildThemeSelector() {
+  const toggleBtn = document.getElementById("themeToggleBtn");
+  const swatchesBox = document.getElementById("themeSwatches");
+
+  THEME_ORDER.forEach(id => {
+    const t = THEMES[id];
+    const sw = document.createElement("div");
+    sw.className = "theme-swatch";
+    sw.dataset.theme = id;
+    sw.title = t.name;
+    sw.style.background = `linear-gradient(135deg, ${t.accent}, ${t.accent2})`;
+    sw.addEventListener("click", () => {
+      applyTheme(id);
+      scheduleSave();
+    });
+    swatchesBox.appendChild(sw);
+  });
+
+  toggleBtn.addEventListener("click", () => {
+    swatchesBox.classList.toggle("open");
+  });
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────
+function buildClockTicks() {
+  const g = document.getElementById("clockTicks");
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * 30) * Math.PI / 180;
+    const x1 = 100 + 82 * Math.sin(angle), y1 = 100 - 82 * Math.cos(angle);
+    const x2 = 100 + 92 * Math.sin(angle), y2 = 100 - 92 * Math.cos(angle);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+    line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+    line.setAttribute("stroke", "var(--text-dim)");
+    line.setAttribute("stroke-width", i % 3 === 0 ? "3" : "1.5");
+    g.appendChild(line);
+  }
+}
+
+function tickClock() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  const hhmmss = [h, m, s].map(n => String(n).padStart(2, "0")).join(":");
+  const dateStr = now.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+  // Classic analogue
+  document.getElementById("handHour").setAttribute("transform", `rotate(${(h % 12) * 30 + m * 0.5}, 100, 100)`);
+  document.getElementById("handMin").setAttribute("transform", `rotate(${m * 6 + s * 0.1}, 100, 100)`);
+  document.getElementById("handSec").setAttribute("transform", `rotate(${s * 6}, 100, 100)`);
+  document.getElementById("clockDigital").textContent = hhmmss;
+  document.getElementById("clockDate").textContent = dateStr;
+
+  // Minimal analogue (no seconds hand, by design — that's the "minimal" part)
+  document.getElementById("handHourMin").setAttribute("transform", `rotate(${(h % 12) * 30 + m * 0.5}, 100, 100)`);
+  document.getElementById("handMinMin").setAttribute("transform", `rotate(${m * 6}, 100, 100)`);
+  document.getElementById("clockDateMinimal").textContent = dateStr;
+
+  // Digital large
+  document.getElementById("clockDigitalLarge").textContent = hhmmss;
+  document.getElementById("clockDateLarge").textContent = dateStr;
+
+  // Digital retro (LCD-style)
+  document.getElementById("clockRetroTime").textContent = hhmmss;
+  document.getElementById("clockDateRetro").textContent = dateStr;
+
+  // Binary
+  renderBinaryClock(h, m, s);
+  document.getElementById("clockDateBinary").textContent = dateStr;
+}
+
+function renderBinaryClock(h, m, s) {
+  const grid = document.getElementById("clockBinaryGrid");
+  if (!grid.childElementCount) {
+    // Build the 6 columns (H tens, H units, M tens, M units, S tens, S units)
+    // once, then just toggle .lit on subsequent ticks rather than rebuilding.
+    for (let c = 0; c < 6; c++) {
+      const col = document.createElement("div");
+      col.className = "clock-binary-col";
+      for (let r = 0; r < 4; r++) {
+        const dot = document.createElement("div");
+        dot.className = "clock-binary-dot";
+        col.appendChild(dot);
+      }
+      grid.appendChild(col);
+    }
+  }
+  const digits = [
+    Math.floor(h / 10), h % 10,
+    Math.floor(m / 10), m % 10,
+    Math.floor(s / 10), s % 10,
+  ];
+  const cols = grid.children;
+  digits.forEach((d, i) => {
+    const bits = digitToBits(d);
+    const dots = cols[i].children;
+    bits.forEach((bit, row) => {
+      dots[row].classList.toggle("lit", bit === 1);
+    });
+  });
+}
+
+function buildClockStylePopover() {
+  const pop = document.getElementById("clockStylePopover");
+  CLOCK_STYLES.forEach(style => {
+    const btn = document.createElement("button");
+    btn.className = "style-option";
+    btn.textContent = style.name;
+    btn.dataset.style = style.id;
+    btn.addEventListener("click", () => {
+      applyClockStyle(style.id);
+      document.getElementById("clockStylePopover").classList.remove("open");
+      scheduleSave();
+    });
+    pop.appendChild(btn);
+  });
+}
+
+function applyClockStyle(styleId) {
+  currentClockStyle = CLOCK_STYLES.some(s => s.id === styleId) ? styleId : DEFAULT_CLOCK_STYLE;
+  document.querySelectorAll(".clock-face").forEach(face => {
+    face.classList.toggle("active", face.dataset.style === currentClockStyle);
+  });
+  document.querySelectorAll(".style-option").forEach(opt => {
+    opt.classList.toggle("active", opt.dataset.style === currentClockStyle);
+  });
+}
+
+document.getElementById("clockStyleBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  document.getElementById("clockStylePopover").classList.toggle("open");
+});
+document.addEventListener("click", (e) => {
+  const pop = document.getElementById("clockStylePopover");
+  if (pop.classList.contains("open") && !pop.contains(e.target) && e.target.id !== "clockStyleBtn") {
+    pop.classList.remove("open");
+  }
+});
+
+// ── Calculator ────────────────────────────────────────────────────────────
+function buildCalculator() {
+  const grid = document.getElementById("calcGrid");
+  const keys = [
+    "7","8","9","/",
+    "4","5","6","*",
+    "1","2","3","-",
+    "0",".","=","+",
+  ];
+  keys.forEach(k => {
+    const btn = document.createElement("button");
+    btn.className = "calc-btn" + (["+","-","*","/"].includes(k) ? " op" : "") + (k === "=" ? " eq" : "");
+    btn.textContent = k;
+    btn.addEventListener("click", () => {
+      calState = calcInput(calState, k);
+      document.getElementById("calcDisplay").textContent = calState.display;
+    });
+    grid.appendChild(btn);
+  });
+  const clearBtn = document.createElement("button");
+  clearBtn.className = "calc-btn clear";
+  clearBtn.textContent = "C";
+  clearBtn.style.gridColumn = "span 4";
+  clearBtn.addEventListener("click", () => {
+    calState = calcInput(calState, "C");
+    document.getElementById("calcDisplay").textContent = calState.display;
+  });
+  grid.appendChild(clearBtn);
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────
+const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+function renderCalendar() {
+  const year = calView.getFullYear(), month = calView.getMonth();
+  document.getElementById("calLabel").textContent =
+    calView.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  const grid = document.getElementById("calGrid");
+  grid.innerHTML = "";
+  DOW.forEach(d => {
+    const el = document.createElement("div");
+    el.className = "cal-dow";
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+  const weeks = getMonthGrid(year, month);
+  weeks.forEach(week => {
+    week.forEach(day => {
+      const el = document.createElement("div");
+      if (day === null) {
+        el.className = "cal-day empty";
+      } else {
+        el.className = "cal-day" + (isCurrentMonth && day === today.getDate() ? " today" : "");
+        el.textContent = day;
+      }
+      grid.appendChild(el);
+    });
+  });
+}
+
+document.getElementById("calPrev").addEventListener("click", () => {
+  calView = new Date(calView.getFullYear(), calView.getMonth() - 1, 1);
+  renderCalendar();
+});
+document.getElementById("calNext").addEventListener("click", () => {
+  calView = new Date(calView.getFullYear(), calView.getMonth() + 1, 1);
+  renderCalendar();
+});
+
+// ── Sticky notes ──────────────────────────────────────────────────────────
+function createStickyNote(id, x, y, text) {
+  const el = document.createElement("div");
+  el.className = "widget sticky";
+  el.id = id;
+  el.innerHTML = `<div class="widget-head">Note <span class="sticky-del" title="Delete note">✕</span></div><div class="sticky-body" contenteditable="true"></div>`;
+  document.getElementById("stickyLayer").appendChild(el);
+
+  el.style.left = Math.round(x) + "px";
+  el.style.top = Math.round(y) + "px";
+
+  const body = el.querySelector(".sticky-body");
+  body.textContent = text || "";
+  if (text && text.trim()) el.classList.add("filled");
+
+  body.addEventListener("input", () => {
+    el.classList.toggle("filled", body.textContent.trim().length > 0);
+    scheduleSave();
+  });
+  body.addEventListener("pointerdown", (e) => e.stopPropagation());
+
+  const delBtn = el.querySelector(".sticky-del");
+  delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
+  delBtn.addEventListener("click", () => {
+    el.remove();
+    scheduleSave();
+  });
+
+  makeDraggable(el);
+  return el;
+}
+
+function collectExistingRects() {
+  // Every current widget (sticky notes included), used to find a free spot
+  // for a newly-added note.
+  const rects = [];
+  document.querySelectorAll(".widget[id]").forEach(w => {
+    rects.push({ x: w.offsetLeft, y: w.offsetTop, w: w.offsetWidth, h: w.offsetHeight });
+  });
+  return rects;
+}
+
+function addStickyNote(text) {
+  const rect = desktop.getBoundingClientRect();
+  const noteW = 170, noteH = 150;
+  const spot = findEmptySpot(collectExistingRects(), noteW, noteH, rect.width, rect.height);
+  const id = "sticky-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+  createStickyNote(id, spot.x, spot.y, text || "");
+  scheduleSave();
+}
+document.getElementById("addNoteBtn").addEventListener("click", () => addStickyNote(""));
+
+// ── To-Do list ────────────────────────────────────────────────────────────
+function renderTodos() {
+  const list = document.getElementById("todoList");
+  list.innerHTML = "";
+  todos.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "todo-item" + (item.done ? " done" : "");
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = item.done;
+    cb.addEventListener("change", () => {
+      item.done = cb.checked;
+      row.classList.toggle("done", item.done);
+      scheduleSave();
+    });
+
+    const text = document.createElement("span");
+    text.className = "todo-text";
+    text.textContent = item.text;
+
+    const del = document.createElement("button");
+    del.className = "todo-del";
+    del.textContent = "✕";
+    del.addEventListener("click", () => {
+      todos = todos.filter(t => t.id !== item.id);
+      renderTodos();
+      scheduleSave();
+    });
+
+    row.appendChild(cb);
+    row.appendChild(text);
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+function addTodo(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  todos.push({ id: "t" + Date.now() + Math.floor(Math.random() * 1000), text: trimmed, done: false });
+  renderTodos();
+  scheduleSave();
+}
+
+document.getElementById("todoAddBtn").addEventListener("click", () => {
+  const input = document.getElementById("todoInput");
+  addTodo(input.value);
+  input.value = "";
+});
+document.getElementById("todoInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    addTodo(e.target.value);
+    e.target.value = "";
+  }
+});
+
+// ── System monitor (pushed from Python every ~500ms, see electra_canvas.py) ──
+// window.electraSystemStats is called unconditionally by the host whenever
+// the canvas is open, regardless of which plugin is loaded — harmless for
+// any plugin that doesn't define it, per the same convention the AI bridge
+// response callback already uses.
+window.electraSystemStats = function (stats) {
+  const bars = { ram: "sysbarRam", cpu: "sysbarCpu", disk: "sysbarDisk" };
+  Object.keys(bars).forEach(key => {
+    const el = document.getElementById(bars[key]);
+    if (el && typeof stats[key] === "number") {
+      el.style.width = Math.max(0, Math.min(100, stats[key])) + "%";
+    }
+  });
+};
+
+// ── Image preview widget ──────────────────────────────────────────────────
+let backgroundsList = [];
+let backgroundsIndex = -1;
+let backgroundsRotateTimer = null;
+const BACKGROUNDS_ROTATE_MS = 5000;
+
+window.electraBackgroundsResponse = function (paths) {
+  backgroundsList = Array.isArray(paths) ? paths : [];
+  if (backgroundsList.length === 0) {
+    document.getElementById("imageHint").textContent = "No wallpapers found in /usr/share/backgrounds";
+    return;
+  }
+  startBackgroundRotation();
+};
+
+function showNextBackground() {
+  if (!backgroundsList.length) return;
+  backgroundsIndex = (backgroundsIndex + 1) % backgroundsList.length;
+  document.getElementById("imagePreviewImg").src = "file://" + backgroundsList[backgroundsIndex];
+}
+
+function startBackgroundRotation() {
+  if (backgroundsRotateTimer) clearInterval(backgroundsRotateTimer);
+  showNextBackground();
+  backgroundsRotateTimer = setInterval(showNextBackground, BACKGROUNDS_ROTATE_MS);
+}
+
+document.getElementById("imagePreviewImg").addEventListener("click", () => {
+  if (backgroundsList.length === 0) {
+    // First click — ask the host to list /usr/share/backgrounds. The
+    // response (window.electraBackgroundsResponse) kicks off rotation.
+    window.webkit.messageHandlers.electra.postMessage(JSON.stringify({ action: "list_backgrounds" }));
+  } else {
+    // Already have the list — treat a click as "skip to the next one now"
+    // and reset the auto-rotate timer so it doesn't double-advance right after.
+    startBackgroundRotation();
+  }
+});
+
+// ── News (via the AI bridge) ─────────────────────────────────────────────
+let newsRequestId = null;
+function refreshNews() {
+  const contentEl = document.getElementById("newsContent");
+  contentEl.textContent = "Asking Electra for current headlines…";
+  contentEl.classList.add("dim");
+
+  const requestId = "news-" + Date.now();
+  newsRequestId = requestId;
+
+  window.electraAIResponse = (id, result) => {
+    if (id !== newsRequestId) return;
+    if (result && result.error) {
+      const friendly = {
+        offline_mode: "Offline right now — can't fetch news.",
+        rate_limited: "Slow down a moment, then try Refresh again.",
+        not_authenticated: "Not signed in — can't reach Electra.",
+        payload_too_large: "Request too large (shouldn't happen here).",
+        bridge_unavailable: "AI bridge isn't available on this build.",
+      };
+      contentEl.textContent = friendly[result.error] || `Couldn't fetch news (${result.error}).`;
+      contentEl.classList.add("dim");
+      return;
+    }
+    try {
+      const text = stripThinkTags(result.choices[0].message.content);
+      contentEl.textContent = text || "(Empty response — try Refresh again.)";
+      contentEl.classList.remove("dim");
+    } catch (e) {
+      contentEl.textContent = "Got a response but couldn't read it — check the console.";
+      contentEl.classList.add("dim");
+      console.warn("[Workstation] Unexpected news response shape:", result);
+    }
+  };
+
+  window.webkit.messageHandlers.electra.postMessage(JSON.stringify({
+    action: "ai_request",
+    request_id: requestId,
+    messages: [
+      { role: "system", content: "You answer in a short, plain bullet list, nothing else. Do not include any <think> reasoning blocks or preamble — just the bullet list." },
+      { role: "user", content: "Give me 4-5 current top news headlines as a short bullet list." },
+    ],
+  }));
+}
+document.getElementById("newsRefreshBtn").addEventListener("click", refreshNews);
+const NEWS_AUTO_REFRESH_MS = 60 * 60 * 1000; // hourly
+
+// ── Init ──────────────────────────────────────────────────────────────────
+function init() {
+  const saved = loadState();
+
+  applyTheme(saved ? saved.theme : DEFAULT_THEME);
+  buildThemeSelector();
+  applyTheme(saved ? saved.theme : DEFAULT_THEME); // re-apply after swatches exist, to mark .active
+
+  buildClockTicks();
+  buildClockStylePopover();
+  applyClockStyle(saved ? saved.clockStyle : DEFAULT_CLOCK_STYLE);
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  buildCalculator();
+  renderCalendar();
+
+  document.getElementById("notepadArea").value = saved ? saved.notepad : "";
+  document.getElementById("notepadArea").addEventListener("input", scheduleSave);
+
+  todos = saved ? saved.todos : [];
+  renderTodos();
+
+  // Default positions — spaced out across the full desktop rather than
+  // clustered together, with generous gaps between widgets.
+  const positions = saved ? saved.positions : {};
+  positionWidget(document.getElementById("widget-calendar"), 0.05, 0.06, positions);
+  positionWidget(document.getElementById("widget-notepad"), 0.34, 0.06, positions);
+  positionWidget(document.getElementById("widget-clock"), 0.80, 0.06, positions);
+  positionWidget(document.getElementById("widget-calculator"), 0.05, 0.42, positions);
+  positionWidget(document.getElementById("widget-todo"), 0.34, 0.42, positions);
+  positionWidget(document.getElementById("widget-news"), 0.80, 0.42, positions);
+  positionWidget(document.getElementById("widget-image"), 0.05, 0.68, positions);
+
+  ["widget-clock","widget-calculator","widget-calendar","widget-notepad","widget-news","widget-todo","widget-image"].forEach(id => {
+    makeDraggable(document.getElementById(id));
+  });
+
+  // Restore any sticky notes from a previous session — each one now carries
+  // its own {x, y, text} rather than being one of a fixed default set.
+  const stickyNotes = saved ? saved.stickyNotes : {};
+  Object.keys(stickyNotes).forEach(id => {
+    const note = stickyNotes[id];
+    createStickyNote(id, note.x, note.y, note.text);
+  });
+
+  refreshNews();
+  setInterval(refreshNews, NEWS_AUTO_REFRESH_MS);
+
+  window.addEventListener("resize", () => {
+    // Re-clamp everything into view if the window/canvas size changed.
+    const rect = desktop.getBoundingClientRect();
+    document.querySelectorAll(".widget[id]").forEach(w => {
+      const { x, y } = clampPosition(w.offsetLeft, w.offsetTop, w.offsetWidth, w.offsetHeight, rect.width, rect.height);
+      w.style.left = x + "px";
+      w.style.top = y + "px";
+    });
+  });
+}
+
+init();
+
+} // end DOM-dependent block
+</script>
+</body>
+</html>
