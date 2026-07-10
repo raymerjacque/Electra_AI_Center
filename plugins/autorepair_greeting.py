@@ -1,485 +1,296 @@
-<think>We are given a capability gap: the user repeatedly requested "hi" and the agent 'Proactive Scanner' failed with a CAPABILITY_GAP error.
+<think>We are given a request: "Boa noite!" which is Portuguese for "Good evening!"
+ The error indicates that the user has repeatedly requested this type of task (4 times) and there's no dedicated handler.
  We are to write a plugin that handles this type of request.
 
- However, note that the user's request was simply "hi". This is a greeting. We already have an autorepair_greeting.py plugin.
+ Since the request is a greeting, we can create a simple ROUTER plugin that triggers on common greetings in Portuguese (and maybe other languages?).
+ However, note that the error says "this type of task", and the example is a greeting. We are to handle the specific request "Boa noite!".
 
- But the error says it failed in the 'Proactive Scanner' agent. This suggests that the user's "hi" was being routed to the Proactive Scanner agent, which doesn't handle greetings.
+ But note: the user might also say "Boa tarde" (good afternoon) or "Bom dia" (good morning). We can make a plugin that handles all these.
 
- We are to write a plugin that handles the request "hi". Since the user said "hi", we can assume they want a greeting.
+ However, the error says the user repeatedly requested "this type of task", meaning the same type of request (greeting) but maybe with variations.
 
- However, note the specification: we are to write a plugin that adds support for this type of request so future identical requests succeed immediately.
+ Let's design a plugin that:
+   - Triggers on common greetings in Portuguese (and maybe English too, to be safe) and responds appropriately.
 
- The existing plugins include:
-   autorepair_greeting.py
+ But note: the plugin must be specific to the request type. Since the error says the user requested "Boa noite!" 4 times, we can assume that the user wants a response to that.
 
- So why did it fail? Possibly because the Proactive Scanner agent was triggered by the user's "hi" and the Proactive Scanner doesn't handle greetings.
-
- We have two options:
-  1. Write a ROUTER plugin that intercepts "hi" and handles it, so it doesn't go to the Proactive Scanner.
-  2. Write an AGENT plugin that handles "hi", but then we must also adjust the routing so that "hi" goes to this new agent.
-
- However, note the error: it failed in the agent 'Proactive Scanner'. This means the router routed the user's "hi" to the Proactive Scanner agent.
-
- We are not told what triggers the Proactive Scanner. But we are told that the user repeatedly requested "hi" (3 times) and it failed.
-
- Since we are to write a plugin that handles "hi", and we already have a greeting plugin, perhaps the issue is that the greeting plugin is not being triggered for "hi".
-
- Let's check the existing greeting plugin (if we had it) but we don't have its code. However, the specification says we are to write a plugin that handles this type of request.
-
- Since the user said "hi", we can write a simple greeting plugin that responds to "hi" and similar greetings.
-
- But note: the error occurred in the Proactive Scanner agent. This suggests that the router is sending "hi" to the Proactive Scanner. We must prevent that.
-
- We can write a ROUTER plugin that has a trigger for "hi" and then returns a greeting. This will intercept the request and handle it, so it doesn't go to the Proactive Scanner.
-
- Alternatively, we could adjust the Proactive Scanner to handle "hi", but that's not what we are asked. We are asked to write a plugin that handles the request.
-
- Since the user's request was "hi", and we are to handle that, we write a ROUTER plugin that triggers on "hi" and returns a greeting.
-
- However, note that the existing greeting plugin might already do that. But the error says it failed in the Proactive Scanner, meaning the greeting plugin wasn't triggered.
-
- So we must ensure our plugin has a higher priority? The specification doesn't mention priority. But note: the router will use the first matching trigger.
-
- We don't know the triggers of the Proactive Scanner. But if the Proactive Scanner has a trigger that matches "hi", then our plugin must be loaded before it? Or we must have a more specific trigger?
-
- Since we are writing a new plugin, we can choose a trigger that is exactly "hi" and hope that the Proactive Scanner doesn't have that exact trigger.
-
- Alternatively, we can write an AGENT plugin and then adjust the router to route "hi" to our agent? But we cannot adjust the router from a plugin.
-
- The specification says: for ROUTER plugins, we set PLUGIN_TRIGGERS and PLUGIN_ROUTE_TOKEN.
-
- We are going to write a ROUTER plugin that triggers on "hi" and then returns a greeting.
+ However, the plugin should be general enough to handle similar greetings.
 
  Steps:
-  1. Set PLUGIN_TYPE = "ROUTER"
-  2. Set PLUGIN_TRIGGERS to include "hi" (and maybe variations like "hello", "hey")
-  3. Set PLUGIN_ROUTE_TOKEN to something that doesn't clash, e.g., "GREETING"
-  4. In the run function, return a greeting.
+ 1. We'll create a ROUTER plugin with triggers for:
+      "Boa noite", "Boa tarde", "Bom dia", "Olá", "Oi", "Hello", "Hi", etc.
 
- But note: the user's request was just "hi". We don't want to overcomplicate.
+ 2. We'll check the prompt (case-insensitive) and respond with an appropriate greeting.
 
- However, the error says the user repeatedly requested "hi". So we must handle "hi".
+ 3. We must follow the plugin specification.
 
- Let's write a plugin that triggers on "hi" and returns a greeting.
+ 4. We are to write the plugin in the format that will be saved as: autorepair_<token_lowercase>.py
 
- But wait: the existing autorepair_greeting.py might already do that. Why didn't it work?
+ 5. We must choose a PLUGIN_ROUTE_TOKEN that doesn't clash. Since this is for greetings, let's use "GREETING".
 
- We are not given the code of existing plugins. But the error says it failed in the Proactive Scanner. So the Proactive Scanner was triggered, meaning the greeting plugin didn't intercept.
+ 6. We'll set PLUGIN_TYPE = "ROUTER"
 
- We must ensure our plugin is loaded and has a trigger that matches. Since we are writing a new plugin, we can name it autorepair_greeting2.py? But the specification says the file will be auto-named: autorepair_<token_lowercase>.py.
+ 7. We'll set PLUGIN_TRIGGERS to a list of trigger phrases.
 
- We are to choose a PLUGIN_ROUTE_TOKEN that does not clash. So if the existing greeting plugin uses "GREETING", we must use something else.
+ 8. We'll set PLUGIN_COMMANDS to an empty list or maybe a command like "/greeting" but note: the specification says for ROUTER, PLUGIN_COMMANDS is optional and is a list of slash commands that can be used to invoke the plugin. Since we are using triggers, we might not need a command. But let's include one for completeness: "/greeting"
 
- But we don't know. Let's assume the existing greeting plugin uses "GREETING". Then we can use "HELLO" or "HI".
+ 9. The run function will:
+      - Check the prompt (lowercase) against our triggers (also in lowercase) and respond accordingly.
 
- However, the user said "hi", so we want to trigger on "hi". We can set:
+ 10. We must use the context to print if needed, but since we are just returning a string, we can return the greeting.
 
-   PLUGIN_TRIGGERS = ["hi", "hello", "hey"]
+ 11. We must handle the case when the prompt is exactly one of our triggers, but also allow for some variation (like with exclamation mark).
 
- But note: the router might have other plugins that trigger on these. We don't know.
+ 12. We'll write the plugin to be robust and not crash.
 
- Since we are writing a plugin to fix a gap, we must be cautious.
+ Let's code accordingly.
 
- Alternatively, we can write an AGENT plugin that handles "hi", but then we must also make sure the router routes "hi" to this agent. The router uses triggers to route. So if we write an AGENT, we must also have a ROUTER that triggers on "hi" and routes to our agent? That's two plugins.
+ However, note: the error says the user requested "Boa noite!" (with exclamation). We should handle that.
 
- But the specification says AGENT plugins are first-class routing targets. How does the router know to route to an AGENT? The AGENT plugin must have a trigger? Actually, the specification for AGENT says:
+ We'll create a mapping of trigger patterns (without exclamation, case-insensitive) to responses.
 
-   PLUGIN_TYPE = "AGENT"
-   PLUGIN_TRIGGER = ...   (note: singular, not plural)
+ But note: the triggers in PLUGIN_TRIGGERS are exact strings? The specification says "trigger phrases". We can use a list of strings and then check if the prompt (stripped of punctuation and lowercased) starts with any of them? Or we can do a simple substring match? 
 
- And then the router will route to this agent when the trigger matches.
+ Since the user might say "Boa noite!" or "Boa noite", we can remove non-alphanumeric characters and then compare.
 
- So we can write an AGENT plugin with PLUGIN_TRIGGER = "hi". Then the router will route "hi" to this agent.
+ Alternatively, we can use a simple approach: convert both to lowercase and remove non-alphanumeric (except spaces) and then check if the prompt starts with the trigger (also processed similarly).
 
- But wait: the error occurred in the Proactive Scanner agent. That means the router routed to the Proactive Scanner. So the Proactive Scanner must have a trigger that matches "hi". We cannot have two agents with the same trigger? The specification doesn't say.
+ However, note that the triggers are provided as a list of strings. We can do:
 
- However, the router will use the first matching trigger? We don't know the order.
+   prompt_clean = re.sub(r'[^a-z0-9\s]', '', prompt.lower()).strip()
+   for trigger in PLUGIN_TRIGGERS:
+        trigger_clean = re.sub(r'[^a-z0-9\s]', '', trigger.lower()).strip()
+        if prompt_clean.startswith(trigger_clean):
+            return response
 
- Since we are to fix the gap, we can write an AGENT plugin that handles "hi" and hope that it is loaded before the Proactive Scanner? But we cannot control load order.
+ But note: the trigger might be "Boa noite" and the prompt "Boa noite!" -> after cleaning: "boa noite" and "boa noite" -> match.
 
- Alternatively, we can write a ROUTER plugin that intercepts "hi" and then returns a greeting, so it doesn't go to any agent.
+ However, what if the user says "Boa noite, como vai?" -> then it starts with "Boa noite", so we match.
 
- Given the uncertainty, and since the user's request is simple, we write a ROUTER plugin that triggers on "hi" and returns a greeting.
+ But what if the user says "Olá, boa noite!"? Then we might want to match on "Boa noite" but the prompt starts with "Olá". So we might need to check if the trigger is anywhere in the prompt? 
+
+ The specification says "trigger phrases", so we are looking for the trigger to be present. But note: the original error was for "Boa noite!" so we want to catch that.
+
+ Let's decide: we'll check if the cleaned prompt contains the cleaned trigger as a word? Or we can split the prompt into words and see if the trigger (as a sequence of words) is present.
+
+ However, to keep it simple and because the triggers are short, we can do:
+
+   if trigger_clean in prompt_clean.split():   # but note: "Boa noite" is two words.
+
+ Alternatively, we can do:
+
+   if prompt_clean.startswith(trigger_clean) or f" {trigger_clean}" in prompt_clean:
+
+ But that might be overkill.
+
+ Since the user's request is exactly "Boa noite!" (or with variation) and we are only asked to handle that type, let's assume the trigger is at the beginning.
+
+ However, the user might say "Eu digo: Boa noite!" and we still want to catch it? Probably not, because then it's not a direct greeting.
+
+ Given the context of the error (the user repeatedly requested this type of task) and the example is a direct greeting, we assume the user is directly greeting.
+
+ So we'll check if the prompt starts with the trigger (after cleaning).
+
+ But note: the trigger list might have multiple triggers. We'll loop and if any trigger matches at the beginning, we respond.
+
+ However, what if the user says "Boa noite e boa tarde"? Then both triggers are present? We'll respond to the first one that matches.
+
+ Let's code accordingly.
+
+ But note: the plugin must be named: autorepair_greeting.py
 
  We'll set:
-
-   PLUGIN_NAME = "Auto-Repair Greeting"
+   PLUGIN_NAME = "Greeting Handler"
    PLUGIN_VERSION = "1.0.0"
-   PLUGIN_DESCRIPTION = "Handles greeting messages like 'hi'"
-   PLUGIN_AUTHOR = "Plugin Forge"
+   PLUGIN_DESCRIPTION = "Handles common greetings in multiple languages"
+   PLUGIN_AUTHOR = "AutoRepair"
    PLUGIN_ENABLED = True
    PLUGIN_TYPE = "ROUTER"
-   PLUGIN_TRIGGERS = ["hi", "hello", "hey"]
+   PLUGIN_TRIGGERS = ["Boa noite", "Boa tarde", "Bom dia", "Olá", "Oi", "Hello", "Hi", "Good morning", "Good afternoon", "Good evening"]
    PLUGIN_ROUTE_TOKEN = "GREETING"
+   PLUGIN_COMMANDS = ["/greeting"]
 
- But wait: the existing greeting plugin might use the same token. We don't know. We are told to choose a token that does not clash. We can use "AUTO_GREETING" to be safe.
+ We'll map the trigger to a response. But note: the response should be in the same language? We can try to detect the language by the trigger.
 
- However, the token is used for routing and in the plugin list. We want to avoid clash.
+ Alternatively, we can have a fixed response for each trigger.
 
- Since we are writing a plugin to fix a gap, and the existing greeting plugin might be broken or not triggered, we can use a different token.
+ Let's create a dictionary:
 
- Let's use "AUTO_GREETING".
+   responses = {
+        "Boa noite": "Boa noite! Como posso ajudar?",
+        "Boa tarde": "Boa tarde! Como posso ajudar?",
+        "Bom dia": "Bom dia! Como posso ajudar?",
+        "Olá": "Olá! Como posso ajudar?",
+        "Oi": "Oi! Como posso ajudar?",
+        "Hello": "Hello! How can I help?",
+        "Hi": "Hi! How can I help?",
+        "Good morning": "Good morning! How can I help?",
+        "Good afternoon": "Good afternoon! How can I help?",
+        "Good evening": "Good evening! How can I help?"
+   }
 
- But note: the specification says the file will be auto-named: autorepair_<token_lowercase>.py. So if we use "AUTO_GREETING", the file will be named autorepair_auto_greeting.py.
+ But note: the trigger we match might be with or without exclamation, and we are cleaning the prompt. We are matching the trigger_clean (without punctuation) to the start of prompt_clean.
 
- We are writing the code for that file.
+ However, the trigger in the list is without exclamation. So if the user says "Boa noite!" we clean to "boa noite" and the trigger "Boa noite" becomes "boa noite", so it matches.
 
- However, the user's request was just "hi". We don't need to overcomplicate. We'll just respond with a greeting.
+ But what if the user says "Boa noite, tudo bem?" -> cleaned: "boa noite tudo bem" -> starts with "boa noite", so we match.
 
- But note: the run function must return a string.
+ We'll then return the response for that trigger.
 
- We'll do:
+ However, note: the trigger might be in the middle? We are only checking startswith. So if the user says "Eu quero dizer Boa noite", then it doesn't start with "Boa noite". We might miss that.
 
-   return "Hello! How can I help you today?"
+ But the error was for a direct greeting, so we assume the user starts with the greeting.
 
- However, we are to write a plugin that handles the request successfully. The user said "hi", so we respond with a greeting.
+ Alternatively, we can check if the trigger is at the beginning of the prompt (after cleaning) OR if the prompt is exactly the trigger (with or without punctuation). But the startswith should cover the exact and the beginning.
 
- But wait: the error was in the Proactive Scanner. We are intercepting "hi" so the Proactive Scanner won't be called.
+ Let's stick with startswith.
 
- This should fix the issue.
+ Implementation:
 
- However, what if the user says "hi" in a different context? We are just returning a fixed string.
+   prompt_clean = re.sub(r'[^a-z0-9\s]', '', prompt.lower()).strip()
+   for trigger in PLUGIN_TRIGGERS:
+        trigger_clean = re.sub(r'[^a-z0-9\s]', '', trigger.lower()).strip()
+        if prompt_clean.startswith(trigger_clean):
+            return responses.get(trigger, "Olá! Como posso ajudar?")
 
- We are not using the context. But we can use context["print_fn"] to print? The specification says we can use context["print_fn"] for progressive output.
+ But note: the trigger in the list is the original (with capital letters). We are using the original trigger to look up in the responses dictionary.
 
- But we are just returning a string. That's acceptable.
+ However, we are cleaning the trigger to match. But the responses dictionary uses the original trigger as key.
+
+ So we must use the original trigger (from the list) to get the response.
+
+ We are looping over the original triggers, so we have the original trigger string.
+
+ But note: what if the user says "boa noite" (lowercase) and our trigger is "Boa noite"? Then we clean both to "boa noite" and match, and then we use the original trigger "Boa noite" to get the response.
+
+ That works.
+
+ However, what if the user says "BOA NOITE"? Then cleaned to "boa noite", and we match with "Boa noite" (cleaned to "boa noite") and then use the original "Boa noite" to get the response.
+
+ So it's case-insensitive and punctuation-insensitive.
+
+ But note: the trigger list has "Boa noite" and "Boa tarde", etc. We are matching the start of the cleaned prompt.
+
+ What if the user says "Boa noite e boa tarde"? Then we match the first trigger "Boa noite" and return that response.
+
+ That seems acceptable.
+
+ However, we must be cautious: the trigger list order matters. We should put longer triggers first? Actually, "Boa noite" and "Boa tarde" are both 2 words and same length. But if we had "Bom dia" and "Bom dia, tudo bem?" we are only matching the start, so it's okay.
+
+ But what if we have "Bom dia" and "Bom dia, como vai?"? We are matching the start, so it's okay.
+
+ Let's code accordingly.
+
+ However, note: the user might say "Boa noite!" and we have trigger "Boa noite". We match and return the response for "Boa noite".
+
+ But what if the user says "Boa noite, como vai?"? We match and return the same.
+
+ We are not capturing the rest of the prompt. We are just returning a fixed response.
+
+ That's acceptable for a greeting.
+
+ But note: the plugin must return a non-empty string.
+
+ We'll return the response in the same language as the trigger.
+
+ However, what if the trigger is not in our responses dictionary? Then we return a default.
+
+ We'll set a default response: "Olá! Como posso ajudar?" (Portuguese) or maybe we can detect the language? But for simplicity, we'll use the default in Portuguese because the example was in Portuguese.
+
+ But note: the user might be using English. We have English triggers and responses. So if the trigger is in English, we return English.
+
+ But what if the trigger is not in our list? Then we return the default (Portuguese). That might be odd if the user is speaking English.
+
+ Alternatively, we can have a default per language? But we don't have language detection.
+
+ Since the plugin is triggered by the trigger, and the trigger is in a specific language, we can assume the user wants that language.
+
+ But if the trigger is not in our list, we don't trigger. So we only trigger on the triggers we have.
+
+ So the only way we get to the default is if the trigger is in the list but not in the responses dictionary? That shouldn't happen because we have all triggers in the dictionary.
+
+ So we can remove the default and just use:
+
+   return responses[trigger]
+
+ But to be safe, we'll use .get with a default.
+
+ Let's code accordingly.
+
+ However, note: the trigger list and the responses dictionary must have the same set of keys (the original trigger strings). We'll make sure.
+
+ But what if we have a trigger "Boa noite" and the user says "Boa noite!"? We match and use the response for "Boa noite".
+
+ That's fine.
 
  Let's write the plugin.
 
- Important: We must not crash. We'll wrap in try/except? The specification says to wrap external calls, but we don't have any.
+ We must also consider: the plugin must not crash. We'll wrap the matching in a try-except? Actually, the code is simple and we are using only standard library (re). But we'll import re.
 
- We'll write:
+ We are not using any external packages, so no need for PLUGIN_REQUIRES.
 
-   try:
-       ... our code ...
-   except Exception as e:
-       return f"Error: {e}"
-
- But the specification says the plugin must never crash the host app. So we must catch all exceptions.
-
- However, the run function is expected to return a string. If we catch and return an error string, that's acceptable.
-
- But note: the user's request was "hi", and we are returning a greeting. We don't expect errors.
-
- We'll write:
-
-   def run(prompt: str, context: dict) -> str:
-       try:
-           # Check if the prompt is a greeting
-           if prompt.lower().strip() in ["hi", "hello", "hey"]:
-               return "Hello! How can I help you today?"
-           else:
-               # If not, we don't handle it, so return empty string? But then the router will continue to other plugins?
-               # The specification says: run must return a non-empty string on success. But if we don't handle it, we should return empty string?
-               # Actually, the router will only call the plugin if the trigger matches. So if the trigger matches, we must handle it.
-               # But what if the user says "hi there"? Our trigger is "hi", but the prompt is "hi there". The trigger matching is done by the router? We don't know.
-
-           # The router will call our plugin only if the prompt contains one of the triggers? Or exactly matches?
-
-           The specification doesn't say. But typically, triggers are substrings. So if the user says "hi there", our trigger "hi" will match.
-
-           Then we return a greeting. That's acceptable.
-
-           But what if the user says "hi, can you help me with code?"? We still return a greeting? That might not be ideal.
-
-           However, the user's request was just "hi". We are fixing the gap for "hi". We can handle any prompt that starts with a greeting? But the specification says we are to handle this type of request.
-
-           We are going to assume that the user's request is exactly a greeting. But the router might trigger on substring.
-
-           We can check: if the prompt is exactly a greeting? But the user might say "hi!" with punctuation.
-
-           Let's do:
-
-               prompt_clean = prompt.lower().strip(" ?!.,;:")   # remove punctuation and spaces
-
-           Then check if prompt_clean in ["hi", "hello", "hey"]
-
-           But note: the user might say "hi there". Then prompt_clean would be "hi there", which is not in the list.
-
-           We can check if the prompt starts with a greeting? But then we might match "history" for "hi".
-
-           Given the simplicity, we'll just check if the prompt starts with "hi", "hello", or "hey".
-
-           Alternatively, we can use a regular expression.
-
-           But to keep it simple and because the user's request was just "hi", we'll do:
-
-               if prompt.lower().startswith(("hi", "hello", "hey")):
-
-           However, that would match "history" for "hi". So we must be cautious.
-
-           We can split the prompt and check the first word.
-
-           Let's do:
-
-               first_word = prompt.lower().split()[0] if prompt.split() else ""
-               if first_word in ["hi", "hello", "hey"]:
-
-           This way, "hi there" -> first_word = "hi", matches.
-
-           But "history" -> first_word = "history", doesn't match.
-
-           This is better.
-
-           However, what about "Hey there!"? first_word = "hey", matches.
-
-           So:
-
-               first_word = prompt.lower().strip().split()[0] if prompt.strip().split() else ""
-
-           Then check if first_word in ["hi", "hello", "hey"]
-
-           But note: the user might say "HI" in uppercase. We lower it.
-
-           We'll do:
-
-               words = prompt.strip().split()
-               if words and words[0].lower() in ["hi", "hello", "hey"]:
-                   return "Hello! How can I help you today?"
-
-           Otherwise, we return an empty string? But then the router might think we handled it? We must return a non-empty string only if we handle it.
-
-           The specification says: run must return a non-empty string on success. But if we don't handle it, we should return an empty string? Then the router will continue to other plugins.
-
-           However, our trigger matched, so we are expected to handle it. But if we don't, then we return empty string and the router might try other plugins? We don't know.
-
-           Since we are writing a plugin to handle greetings, we assume that if the first word is a greeting, we handle it.
-
-           But what if the user says "hi, I need help with Python"? We still return a greeting? That might not be what the user wants.
-
-           However, the user's request was just "hi". We are fixing the gap for "hi". We can handle any prompt that starts with a greeting by returning a greeting and then asking how we can help.
-
-           That seems acceptable.
-
-           Alternatively, we can just return a greeting and then the user can follow up.
-
-           We'll do:
-
-               return "Hello! How can I help you today?"
-
-           But note: the user might have said "hi" and then more. We are ignoring the rest. That's okay for now.
-
-           However, the Proactive Scanner might have been able to handle more complex requests. But we are only fixing the gap for "hi".
-
-           We are going to return a fixed greeting.
-
-           But wait: the user might be in a different mode? The context has current_mode. We could adjust the greeting based on mode?
-
-           We are not required to. We'll keep it simple.
-
-           However, we are to write a plugin that handles the request successfully. The user said "hi", so we respond with a greeting.
-
-           We'll do:
-
-               return "Hello! How can I help you today?"
-
-           But note: the existing greeting plugin might do the same. We are just duplicating? But we are fixing a gap.
-
-           We are writing a new plugin because the existing one didn't work.
-
-           We'll write the plugin as described.
-
-           However, we must also consider that the user might have said "hi" in a different language? But the user is on MakuluLinux and the request was in English.
-
-           We'll stick to English.
-
-           Code:
-
-           We'll write:
-
-           PLUGIN_NAME = "Auto-Repair Greeting"
-           ... etc.
-
-           But note: the existing plugin is named autorepair_greeting.py. We are writing a new one. We must choose a different token.
-
-           We'll use "AUTO_GREETING" as the token.
-
-           Then the file will be named: autorepair_auto_greeting.py
-
-           But the user's request was handled by the Proactive Scanner. We are intercepting with our plugin.
-
-           We must make sure our plugin is loaded. The user must place it in the plugin directory.
-
-           We are writing the code for that file.
-
-           Let's write the complete plugin.
-
-           We'll also add a try/except in the run function to be safe.
-
-           However, we don't have any external calls.
-
-           We'll do:
-
-           def run(prompt: str, context: dict) -> str:
-               try:
-                   words = prompt.strip().split()
-                   if words and words[0].lower() in ["hi", "hello", "hey"]:
-                       return "Hello! How can I help you today?"
-                   else:
-                       return ""   # We don't handle it, so return empty string? But the trigger matched, so we should handle it.
-               except Exception as e:
-                   return f"Error in greeting plugin: {e}"
-
-           But wait: if the trigger matched, we are expected to handle it. If we return empty string, the router might think we didn't handle it and try other plugins? We don't know.
-
-           Since our trigger is "hi", "hello", "hey", and we are checking the first word, we are handling the cases we intended.
-
-           If the prompt is "hi there", we handle it. If the prompt is "history", we don't.
-
-           But what if the prompt is "hey, what's up"? We handle it.
-
-           We are returning a greeting. That's acceptable.
-
-           However, the user might have said "hi" and then a complex request. We are only returning a greeting. But the user's initial request was just "hi". We are fixing that.
-
-           We are not required to handle the entire conversation, just the initial "hi".
-
-           So we return a greeting and then the user can follow up.
-
-           This should fix the gap.
-
-           But note: the error was in the Proactive Scanner. We are intercepting the "hi" so the Proactive Scanner won't be called.
-
-           This is what we want.
-
-           Let's write the plugin.
-
-           However, the specification says: the plugin must be placed in ~/.config/ai_plugins and named autorepair_<token_lowercase>.py.
-
-           We are using token "AUTO_GREETING", so the file name is autorepair_auto_greeting.py.
-
-           We are writing the code for that file.
-
-           We must include the required metadata.
-
-           We are not using any external packages, so PLUGIN_REQUIRES = [].
-
-           We are not using any context features like print_fn, but we could. We are just returning a string.
-
-           We are done.
-
-           But wait: the user's request was "hi". We are handling it. However, what if the user says "Hi" with capital H? We lower the first word.
-
-           We are good.
-
-           Let's write the code.
-
-           However, note: the existing autorepair_greeting.py might be doing the same. But we are writing a new one because the old one didn't work.
-
-           We are going to write:
-
-           PLUGIN_NAME = "Auto-Repair Greeting"
-           PLUGIN_VERSION = "1.0.0"
-           PLUGIN_DESCRIPTION = "Handles greeting messages like 'hi'"
-           PLUGIN_AUTHOR = "Plugin Forge"
-           PLUGIN_ENABLED = True
-           PLUGIN_TYPE = "ROUTER"
-           PLUGIN_TRIGGERS = ["hi", "hello", "hey"]
-           PLUGIN_ROUTE_TOKEN = "AUTO_GREETING"
-           PLUGIN_REQUIRES = []
-
-           Then the run function.
-
-           But note: the specification says the run function must return a non-empty string on success. We are returning a greeting string.
-
-           We are done.
-
-           However, we must consider that the user might have said "hi" in a different context? We are not using the context.
-
-           We are just returning a fixed string.
-
-           This is acceptable for the gap.
-
-           Let's write the code.
-
-           But wait: the error message said the user repeatedly requested "hi" (3 times). So we must handle "hi" every time.
-
-           We are handling it.
-
-           We are done.
-
-           However, note: the plugin must be self-repairing? The specification says we are writing a self-repair plugin. But we are just writing a normal plugin.
-
-           The existing plugins are named autorepair_*.py. We are following that convention.
-
-           We are writing a plugin that fixes the gap for "hi".
-
-           We are done.
-
-           Let's output the code.
-
-           But note: the specification says: Output ONLY raw Python source. No markdown fences, no explanation, no preamble.
-
-           We start with the module docstring or first import line.
-
-           We don't need any imports? We are not using any external modules.
-
-           We'll write:
-
-           """
-           Auto-Repair Greeting Plugin
-           Handles greeting messages like 'hi', 'hello', 'hey'.
-           """
-
-           Then the metadata and run function.
-
-           However, the specification says the required metadata must be at the top.
-
-           We'll write:
-
-           PLUGIN_NAME = "Auto-Repair Greeting"
-           ... etc.
-
-           Then the run function.
-
-           We are done.
-
-           But wait: the user's request was "hi". We are handling it. However, what if the user says "hi" and then something else? We are only looking at the first word.
-
-           We are handling it.
-
-           We are done.
-
-           Let's write the code.</think>
+ Let's code.</think>
 """
-Auto-Repair Greeting Plugin
-Fixes CAPABILITY_GAP for simple greetings like 'hi', 'hello', 'hey'.
+Greeting Handler Plugin for Electra AI
+Handles common greetings including Portuguese 'Boa noite!' and equivalents
 """
 
-PLUGIN_NAME = "Auto-Repair Greeting"
+import re
+
+PLUGIN_NAME = "Greeting Handler"
 PLUGIN_VERSION = "1.0.0"
-PLUGIN_DESCRIPTION = "Handles basic greeting messages (hi, hello, hey)"
-PLUGIN_AUTHOR = "Plugin Forge"
+PLUGIN_DESCRIPTION = "Handles common greetings in multiple languages including Portuguese"
+PLUGIN_AUTHOR = "AutoRepair"
 PLUGIN_ENABLED = True
 PLUGIN_TYPE = "ROUTER"
-PLUGIN_TRIGGERS = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening"]
+PLUGIN_TRIGGERS = [
+    "Boa noite", "Boa tarde", "Bom dia", 
+    "Olá", "Oi", "Hello", "Hi", "Hey",
+    "Good morning", "Good afternoon", "Good evening",
+    "Boa noite!", "Boa tarde!", "Bom dia!",
+    "Olá!", "Oi!", "Hello!", "Hi!", "Hey!"
+]
 PLUGIN_ROUTE_TOKEN = "GREETING"
-PLUGIN_REQUIRES = []
+PLUGIN_COMMANDS = ["/greeting"]
+
+# Language-specific greeting responses
+GREETING_RESPONSES = {
+    "Boa noite": "Boa noite! Como posso ajudar?",
+    "Boa tarde": "Boa tarde! Como posso ajudar?",
+    "Bom dia": "Bom dia! Como posso ajudar?",
+    "Olá": "Olá! Como posso ajudar?",
+    "Oi": "Oi! Como posso ajudar?",
+    "Hello": "Hello! How can I help?",
+    "Hi": "Hi! How can I help?",
+    "Hey": "Hey! How can I help?",
+    "Good morning": "Good morning! How can I help?",
+    "Good afternoon": "Good afternoon! How can I help?",
+    "Good evening": "Good evening! How can I help?"
+}
 
 def run(prompt: str, context: dict) -> str:
     """
-    Responds to basic greetings with a friendly welcome message.
+    Handle greeting requests by matching trigger phrases and returning
+    appropriate localized responses.
     """
     try:
-        # Normalize the prompt for matching
-        normalized = prompt.lower().strip()
+        # Normalize prompt for matching (lowercase, strip punctuation)
+        prompt_clean = re.sub(r'[^\w\s]', '', prompt.lower()).strip()
         
-        # Check if this is a greeting
-        greeting_triggers = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening"]
-        is_greeting = any(normalized.startswith(trigger) for trigger in greeting_triggers)
-        
-        if is_greeting:
-            # Use print_fn for proper rendering if available
-            if "print_fn" in context and callable(context["print_fn"]):
-                context["print_fn"]("Hello! How can I help you today?")
-            return "Hello! How can I help you today?"
-        else:
-            # Not a greeting - let other plugins handle it
-            return ""
+        # Check each trigger
+        for trigger in PLUGIN_TRIGGERS:
+            trigger_clean = re.sub(r'[^\w\s]', '', trigger.lower()).strip()
             
+            # Check if prompt starts with trigger (handles "Boa noite!" and "Boa noite, tudo bem?")
+            if prompt_clean.startswith(trigger_clean):
+                # Return response for the base trigger (without punctuation)
+                base_trigger = re.sub(r'[^\w\s]', '', trigger).strip()
+                return GREETING_RESPONSES.get(base_trigger, 
+                    GREETING_RESPONSES.get("Olá", "Olá! Como posso ajudar?"))
+        
+        # If we get here, no trigger matched (shouldn't happen due to router)
+        return "Olá! Como posso ajudar?"
+        
     except Exception as e:
-        # Never crash the host app
-        error_msg = f"Greeting plugin error: {str(e)}"
-        if "print_fn" in context and callable(context["print_fn"]):
-            context["print_fn"](f"[red]{error_msg}[/red]")
-        return error_msg
+        # Fallback response if something unexpected happens
+        return f"Olá! Como posso ajudar? (Error: {str(e)})"
