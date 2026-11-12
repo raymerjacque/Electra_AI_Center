@@ -38,3 +38,4 @@ VLC supports Lua and native plugins:
 ## Pitfalls
 - Hardware acceleration may fail on some Intel GPUs; try `--avcodec-hw=none`
 - For Blu-ray playback, libbluray/aacs keys must be installed
+- Some newer discs require newer libaacs versions
